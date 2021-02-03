@@ -82,12 +82,12 @@ bool FrontEnd::InitRegistration(std::shared_ptr<RegistrationInterface>& registra
     } else if (registration_method == "ICP") {
         registration_ptr = std::make_shared<ICPRegistration>(config_node[registration_method]);
     }
-    /*
-    TODO: register your custom implementation here
-    else if (registration_method == "YOUR_CUSTOM_REGISTRATION_METHOD") {
-        registration_ptr = nullptr;
+    
+    //register your custom implementation here
+    else if (registration_method == "HCX") {
+        registration_ptr =std::make_shared<ICPRegistration>(config_node[registration_method]);
     }
-     */
+    
     else {
         LOG(ERROR) << "Point cloud registration method " << registration_method << " NOT FOUND!";
         return false;
