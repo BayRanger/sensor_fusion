@@ -1,5 +1,6 @@
 */slam_data/
+lidar-odometry/src/lidar_localization/slam_data/
 .vscode/
 .catkin_tools/
 *.zip
-
+*.pcd
