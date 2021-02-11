@@ -97,9 +97,13 @@ Eigen::Vector3d t_w_curr(0, 0, 0);
 // q_curr_last(x, y, z, w), t_curr_last
 double para_q[4] = {0, 0, 0, 1};
 double para_t[3] = {0, 0, 0};
+double parameters[7] = {0, 0, 0, 1, 0, 0, 0};
 
-Eigen::Map<Eigen::Quaterniond> q_last_curr(para_q);
-Eigen::Map<Eigen::Vector3d> t_last_curr(para_t);
+
+//Eigen::Map<Eigen::Quaterniond> q_last_curr(para_q);
+//Eigen::Map<Eigen::Vector3d> t_last_curr(para_t);
+Eigen::Map<Eigen::Quaterniond> q_last_curr = Eigen::Map<Eigen::Quaterniond>(parameters);
+Eigen::Map<Eigen::Vector3d> t_last_curr = Eigen::Map<Eigen::Vector3d>(parameters + 4);
 
 std::queue<sensor_msgs::PointCloud2ConstPtr> cornerSharpBuf;
 std::queue<sensor_msgs::PointCloud2ConstPtr> cornerLessSharpBuf;
@@ -280,6 +284,7 @@ int main(int argc, char **argv)
                 {
                     corner_correspondence = 0;
                     plane_correspondence = 0;
+                    //TODO: 
 
                     //ceres::LossFunction *loss_function = NULL;
                     ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
@@ -288,8 +293,10 @@ int main(int argc, char **argv)
                     ceres::Problem::Options problem_options;
 
                     ceres::Problem problem(problem_options);
-                    problem.AddParameterBlock(para_q, 4, q_parameterization);
-                    problem.AddParameterBlock(para_t, 3);
+                    //problem.AddParameterBlock(para_q, 4, q_parameterization);//TODO: change
+                    //problem.AddParameterBlock(para_t, 3);
+                    problem.AddParameterBlock(parameters, 7, new PoseSE3Parameterization());
+
 
                     pcl::PointXYZI pointSel;
                     std::vector<int> pointSearchInd;
@@ -378,8 +385,12 @@ int main(int argc, char **argv)
                                 s = (cornerPointsSharp->points[i].intensity - int(cornerPointsSharp->points[i].intensity)) / SCAN_PERIOD;
                             else
                                 s = 1.0;
-                            ceres::CostFunction *cost_function = LidarEdgeFactor::Create(curr_point, last_point_a, last_point_b, s);
-                            problem.AddResidualBlock(cost_function, loss_function, para_q, para_t);
+                            //TODO: use another method
+                             //ceres::CostFunction *cost_function = LidarEdgeFactor::Create(curr_point, last_point_a, last_point_b, s);//3
+                            //problem.AddResidualBlock(cost_function, loss_function, para_q, para_t);//TODO:
+                            ceres::CostFunction *cost_function = new EdgeAnalyticCostFunction(curr_point, last_point_a, last_point_b);  
+                            problem.AddResidualBlock(cost_function, loss_function, parameters);
+                      
                             corner_correspondence++;
                         }
                     }
@@ -476,8 +487,26 @@ int main(int argc, char **argv)
                                     s = (surfPointsFlat->points[i].intensity - int(surfPointsFlat->points[i].intensity)) / SCAN_PERIOD;
                                 else
                                     s = 1.0;
-                                ceres::CostFunction *cost_function = LidarPlaneFactor::Create(curr_point, last_point_a, last_point_b, last_point_c, s);
-                                problem.AddResidualBlock(cost_function, loss_function, para_q, para_t);
+                                Eigen::Matrix<double, 3, 3> matA0;
+                                Eigen::Matrix<double, 3, 1> matB0 = -1 * Eigen::Matrix<double, 3, 1>::Ones();        
+                                matA0(0, 0) = last_point_a[0];
+                                matA0(0, 1) = last_point_a[1];
+                                matA0(0, 2) = last_point_a[2];      
+                                matA0(1, 0) = last_point_b[0];
+                                matA0(1, 1) = last_point_b[1];
+                                matA0(1, 2) = last_point_b[2];    
+                                matA0(2, 0) = last_point_c[0];
+                                matA0(2, 1) = last_point_c[1];
+                                matA0(2, 2) = last_point_c[2];          
+                                // find the norm of plane
+                                Eigen::Vector3d norm = matA0.colPivHouseholderQr().solve(matB0);
+                                double negative_OA_dot_norm = 1 / norm.norm();
+                                norm.normalize();        
+                                //ceres::CostFunction *cost_function = LidarEdgeFactor::Create(curr_point, last_point_a, last_point_b, s);//3
+                                //problem.AddResidualBlock(cost_function, loss_function, para_q, para_t);//TODO:
+                                ceres::CostFunction *cost_function = new SurfNormAnalyticCostFunction(curr_point, norm, negative_OA_dot_norm);  
+                                problem.AddResidualBlock(cost_function, loss_function, parameters);
+ 
                                 plane_correspondence++;
                             }
                         }
