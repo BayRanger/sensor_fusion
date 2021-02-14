@@ -6,6 +6,7 @@
 #include "lidar_localization/sensor_data/gnss_data.hpp"
 
 #include "glog/logging.h"
+#include <iostream>
 
 //静态成员变量必须在类外初始化
 double lidar_localization::GNSSData::origin_longitude = 0.0;
@@ -16,7 +17,9 @@ GeographicLib::LocalCartesian lidar_localization::GNSSData::geo_converter;
 
 namespace lidar_localization {
 void GNSSData::InitOriginPosition() {
-    geo_converter.Reset(latitude, longitude, altitude);
+    //std::cout<<"latitude "<<latitude<<" , "<<"longitude "<<longitude<<" , altitude "<<altitude<<std::endl;
+    geo_converter.Reset(48.9827 , 8.39046 ,116.396);
+    //std::cout<<"After reset latitude "<<latitude<<" , "<<"longitude "<<longitude<<" , altitude "<<altitude<<std::endl;
 
     origin_longitude = longitude;
     origin_latitude = latitude;

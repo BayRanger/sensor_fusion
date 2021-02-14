@@ -105,17 +105,9 @@ bool MatchingFlow::ValidData() {
 
 bool MatchingFlow::UpdateMatching() {
     if (!matching_ptr_->HasInited()) {
-        //
-        // TODO: implement global initialization here
-        //
-        // Hints: You can use SetGNSSPose & SetScanContextPose from matching.hpp
-        //
-
-        // naive implementation:
-        Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
-        
-        matching_ptr_->SetInitPose(init_pose);
-        matching_ptr_->SetInited();
+ 
+        matching_ptr_->SetGNSSPose(current_gnss_data_.pose); 
+ 
     }
 
     return matching_ptr_->Update(current_cloud_data_, laser_odometry_);
