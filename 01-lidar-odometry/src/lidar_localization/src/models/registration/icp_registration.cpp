@@ -17,6 +17,7 @@ ICPRegistration::ICPRegistration(
     float trans_eps = node["trans_eps"].as<float>();
     float euc_fitness_eps = node["euc_fitness_eps"].as<float>();
     int max_iter = node["max_iter"].as<int>();
+
     SetRegistrationParam(max_corr_dist, trans_eps, euc_fitness_eps, max_iter);
 }
 
