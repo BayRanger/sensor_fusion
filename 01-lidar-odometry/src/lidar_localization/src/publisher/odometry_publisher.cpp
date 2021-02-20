@@ -27,7 +27,10 @@ void OdometryPublisher::Publish(const Eigen::Matrix4f& transform_matrix) {
     odometry_.pose.pose.position.z = transform_matrix(2,3);
 
     Eigen::Quaternionf q;
+
+    //std::cout<<"transform matrix"<<transform_matrix<<std::endl;
     q = transform_matrix.block<3,3>(0,0);
+    q = q.normalized();
     odometry_.pose.pose.orientation.x = q.x();
     odometry_.pose.pose.orientation.y = q.y();
     odometry_.pose.pose.orientation.z = q.z();

@@ -82,10 +82,9 @@ bool FrontEnd::InitRegistration(std::shared_ptr<RegistrationInterface>& registra
     } else if (registration_method == "ICP") {
         registration_ptr = std::make_shared<ICPRegistration>(config_node[registration_method]);
     }
-    
     //TODO: register your custom implementation here
     else if (registration_method == "ICP_SVD") {
-        registration_ptr = std::make_shared<ICPRegistration>(config_node[registration_method]);
+        registration_ptr = std::make_shared<ICPSVDRegistration>(config_node[registration_method]);
     }
     
     else {

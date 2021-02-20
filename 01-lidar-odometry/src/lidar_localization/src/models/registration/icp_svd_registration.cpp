@@ -167,9 +167,11 @@ void ICPSVDRegistration::GetTransform(
     const size_t N = xs.size();
 
     // TODO -- find centroids of mu_x and mu_y:
-    float sum_x,sum_y, sum_z;
+    float sum_x=0.f;
+    float sum_y=0.f; 
+    float sum_z=0.f;
      std::vector<Eigen::Vector3f> x_tmp;
-    for (int i =0; i<xs.size(); ++)
+    for (size_t i =0;i<xs.size();++i)
     {
         sum_x+=xs[i][0];
         sum_y+=xs[i][1];
@@ -177,18 +179,11 @@ void ICPSVDRegistration::GetTransform(
     }
     Eigen::Vector3f meanx={sum_x/N, sum_y/N, sum_z/N};
 
-       for (int i =0; i<xs.size(); ++)
-    {
-        sum_x+=xs[i][0];
-        sum_y+=xs[i][1];
-        sum_z+=xs[i][2];
-    }
-    
     const size_t N_y = ys.size();
-    sum_x=0;
-    sum_y=0;
-    sum_z=0;
-    for (int i =0; i<ys.size(); ++)
+    sum_x=0.f;
+    sum_y=0.f;
+    sum_z=0.f;
+    for (size_t i =0; i<ys.size(); ++i)
     {
         sum_x+=ys[i][0];
         sum_y+=ys[i][1];
@@ -198,29 +193,37 @@ void ICPSVDRegistration::GetTransform(
 
 
     // TODO -- build H:
-    Eigen::Matx3f H;
-    Eigen::Matx3f R;
-
-    for (int i =0; i<xs.size(); ++i)
+    Eigen::Matrix3f H;
+    H.setZero();
+    Eigen::Matrix3f R;
+    R.setZero();
+    for (size_t i =0; i<ys.size(); ++i)
     {
-        Eigen::Vector3f y_vec = ys[i][0] - meany;
-        Eigen::Vector3f x_vec = xs[i][0] - meanx;
-        Eigen::Rowvector3f x_row_vec <<x_vec[0],x_vec[1],x_vec[2];
-        H += y_vec * x_row_vec;
+        Eigen::Vector3f y_vec = ys[i] - meany;
+        Eigen::Vector3f x_vec = xs[i] - meanx;
+       // Eigen::RowVector3f x_row_vec(x_vec[0],x_vec[1],x_vec[2]);
+        H += y_vec * x_vec.transpose();
  
     }
 
     // TODO -- solve R:
-    JacobiSVD<MatrixXf> svd(H, ComputeFullU|ComputeFullV)；
-    R = svd.matrixV.transpose() * svd.matrixU.transpose();//if the transpose correct
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd(H, Eigen::ComputeFullU|Eigen::ComputeFullV);
+    Eigen::Matrix3f Vt = svd.matrixV().transpose();
+    Eigen::Matrix3f Ut = svd.matrixU().transpose();
+
+    R = svd.matrixV() * Ut; 
+    //R = Vt* Ut; 
+    //R = 
 
     // TODO --   t:
-    Eigen::Vector3f t = x_vec - R*y_vec;
+    Eigen::Vector3f t = meanx -  R*meany;
 
     // set output:
     transformation_.setIdentity();
     transformation_.block<3,3>(0,0) = R;
-    transformation_.block<3,1>(3,0) = t;
+    transformation_.block<3,1>(0,3) = t;
+    //std::cout<<"transform "<<std::endl;
+    //std::cout<<transformation_<<std::endl;
 
 
 }
