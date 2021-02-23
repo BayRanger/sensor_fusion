@@ -85,9 +85,9 @@ template <typename _T1> struct MultiPosAccResidual
       // TODO: implement lower triad model here
       //
       // mis_yz, mis_zy, mis_zx:
-      params[0], params[1], params[2],
-      // mis_xz, mis_xy, mis_yx:
       _T2(0), _T2(0), _T2(0),
+      // mis_xz, mis_xy, mis_yx:
+      params[0], params[1], params[2],
       //    s_x,    s_y,    s_z:
       params[3], params[4], params[5], 
       //    b_x,    b_y,    b_z: 
@@ -218,9 +218,13 @@ bool MultiPosCalibration_<_T>::calibrateAcc(
     //
     // TODO: implement lower triad model here
     //
-    acc_calib_params[0] = init_acc_calib_.misYZ();
-    acc_calib_params[1] = init_acc_calib_.misZY();
-    acc_calib_params[2] = init_acc_calib_.misZX();
+    acc_calib_params[0] = init_acc_calib_.misXZ();
+    acc_calib_params[1] = init_acc_calib_.misXY();
+    acc_calib_params[2] = init_acc_calib_.misYX();
+
+    //acc_calib_params[0] = init_acc_calib_.misYZ();
+    //acc_calib_params[1] = init_acc_calib_.misZY();
+    //acc_calib_params[2] = init_acc_calib_.misZX();
     
     acc_calib_params[3] = init_acc_calib_.scaleX();
     acc_calib_params[4] = init_acc_calib_.scaleY();
@@ -291,10 +295,11 @@ bool MultiPosCalibration_<_T>::calibrateAcc(
     //
     // TODO: implement lower triad model here
     // 
+    0,
+    0,0,
     min_cost_calib_params[0],
     min_cost_calib_params[1],
     min_cost_calib_params[2],
-    0,0,0,
     min_cost_calib_params[3],
     min_cost_calib_params[4],
     min_cost_calib_params[5],
