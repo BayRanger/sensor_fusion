@@ -38,22 +38,23 @@
 using namespace imu_tk;
 using namespace Eigen;
 using namespace std;
+
 template <typename _T1>
 class MultiPosAccAnalyticCostFunction: public ceres::SizedCostFunction<1, 9> {
 public:
   MultiPosAccAnalyticCostFunction(const _T1 &g_mag_, const Eigen::Matrix< _T1, 3 , 1> &sample_): g_mag(g_mag_), sample(sample_){}
   //template <typename _T2>
-  bool Evaluate(_T2 const* const* parameters, _T2 *residuals, _T2 **jacobians) const
+  bool Evaluate(double const* const* parameters, double *residuals, double **jacobians) const
   {
-      Eigen::Matrix<_T2, 3, 1> raw_samp( 
-      _T2(sample(0)), 
-      _T2(sample(1)), 
-      _T2(sample(2)) 
+      Eigen::Matrix<double, 3, 1> raw_samp( 
+      double(sample(0)), 
+      double(sample(1)), 
+      double(sample(2)) 
     );
 
-    CalibratedTriad_<_T2> calib_triad( 
+    CalibratedTriad_<double> calib_triad( 
  
-      _T2(0), _T2(0), _T2(0),
+      double(0), double(0), double(0),
       // mis_xz, mis_xy, mis_yx:
       parameters[0][0], parameters[0][1], parameters[0][2],
       //    s_x,    s_y,    s_z:
@@ -63,30 +64,30 @@ public:
     );
     
     // apply undistortion transform:
-    Eigen::Matrix< _T2, 3 , 1> calib_samp = calib_triad.unbiasNormalize( raw_samp );
+    Eigen::Matrix< double, 3 , 1> calib_samp = calib_triad.unbiasNormalize( raw_samp );
     
-    residuals[0] = _T2 (g_mag) - calib_samp.norm();
+    residuals[0] = double (g_mag) - calib_samp.norm();
     if(jacobians != NULL)
 				{
 					if(jacobians[0] != NULL)
 					{
-            Eigen::Matrix<_T2, 3, 9> d_by_theta;
+            Eigen::Matrix<double, 3, 9> d_by_theta;
             //Attention: minus b instead of plus b
-            Eigen::Matrix< _T2, 3 , 1> a_s1 = calib_triad.getScaleMatrix() * (raw_samp-calib_triad.getBiasVector());
-            Eigen::Matrix< _T2, 3 , 1> a_s2 = raw_samp - calib_triad.getBiasVector();
-            Eigen::Matrix< _T2, 3 , 3> d_by_alpha; 
+            Eigen::Matrix< double, 3 , 1> a_s1 = calib_triad.getScaleMatrix() * (raw_samp-calib_triad.getBiasVector());
+            Eigen::Matrix< double, 3 , 1> a_s2 = raw_samp - calib_triad.getBiasVector();
+            Eigen::Matrix< double, 3 , 3> d_by_alpha; 
             d_by_alpha <<0,0,0,a_s1(0,0),0,0,0,-a_s1(1,0),a_s2(2,0);
-            Eigen::Matrix< _T2, 3 , 3> d_by_s =calib_triad.getMisalignmentMatrix()*a_s2.array().matrix().asDiagonal();
-            Eigen::Matrix< _T2, 3 , 3> d_by_b = -calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix();
+            Eigen::Matrix< double, 3 , 3> d_by_s =calib_triad.getMisalignmentMatrix()*a_s2.array().matrix().asDiagonal();
+            Eigen::Matrix< double, 3 , 3> d_by_b = -calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix();
             d_by_theta.block<3,3>(0,0) = d_by_alpha;
             d_by_theta.block<3,3>(0,3) = d_by_s;
             d_by_theta.block<3,3>(0,6) = d_by_b;
-            Eigen::Matrix< _T2, 3 , 1> h_vec = calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix()*(raw_samp-calib_triad.getBiasVector());
+            Eigen::Matrix< double, 3 , 1> h_vec = calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix()*(raw_samp-calib_triad.getBiasVector());
             //TODO: change it to rowvector
-            Eigen::Matrix< _T2, 1 , 3> h_rowvec =  h_vec.transpose();
-						Eigen::Map<Eigen::Matrix<_T2, 1, 9, Eigen::RowMajor> > J_vec(jacobians[0]);
+            Eigen::Matrix< double, 1 , 3> h_rowvec =  h_vec.transpose();
+						Eigen::Map<Eigen::Matrix<double, 1, 9, Eigen::RowMajor> > J_vec(jacobians[0]);
 						J_vec.setZero();
-            J_vec = h_rowvec * d_by_theta;
+            J_vec = -h_rowvec * d_by_theta;
 			
 					}
 				}
@@ -96,8 +97,8 @@ public:
   }
   protected:
 
- _T1 &g_mag;
- Eigen::Matrix< _T1, 3 , 1> sample; 
+ const _T1 &g_mag;
+ const Eigen::Matrix< _T1, 3 , 1> sample; 
 };
 template <typename _T1> struct MultiPosAccResidual
 {
@@ -533,4 +534,4 @@ template <typename _T>
 }
 
 template class MultiPosCalibration_<double>;
-template class MultiPosCalibration_<float>;
+//template class MultiPosCalibration_<float>;
