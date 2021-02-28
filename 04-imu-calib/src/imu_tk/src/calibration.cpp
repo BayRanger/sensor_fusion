@@ -66,7 +66,7 @@ public:
     // apply undistortion transform:
     Eigen::Matrix< double, 3 , 1> calib_samp = calib_triad.unbiasNormalize( raw_samp );
     
-    residuals[0] = double (g_mag) - calib_samp.norm();
+    residuals[0] = double (g_mag*g_mag) - calib_samp.transpose() *calib_samp;
     if(jacobians != NULL)
 				{
 					if(jacobians[0] != NULL)
@@ -76,7 +76,7 @@ public:
             Eigen::Matrix< double, 3 , 1> a_s1 = calib_triad.getScaleMatrix() * (raw_samp-calib_triad.getBiasVector());
             Eigen::Matrix< double, 3 , 1> a_s2 = raw_samp - calib_triad.getBiasVector();
             Eigen::Matrix< double, 3 , 3> d_by_alpha; 
-            d_by_alpha <<0,0,0,a_s1(0,0),0,0,0,-a_s1(1,0),a_s2(2,0);
+            d_by_alpha <<0,0,0,a_s1(0,0),0,0,0,-a_s1(0,0),a_s1(1,0);
             Eigen::Matrix< double, 3 , 3> d_by_s =calib_triad.getMisalignmentMatrix()*a_s2.array().matrix().asDiagonal();
             Eigen::Matrix< double, 3 , 3> d_by_b = -calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix();
             d_by_theta.block<3,3>(0,0) = d_by_alpha;
