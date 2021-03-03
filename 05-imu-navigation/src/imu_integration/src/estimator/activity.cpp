@@ -63,7 +63,11 @@ void Activity::Init(void) {
 
 bool Activity::Run(void) {
     if (!ReadData())
+    {
+        std::cout<<"No data available"<<std::endl;
         return false;
+
+    }
 
     while(HasData()) {
         if (UpdatePose()) {
@@ -121,19 +125,25 @@ bool Activity::UpdatePose(void) {
 
         // keep the latest IMU measurement for mid-value integration:
         imu_data_buff_.push_back(imu_data);
+ 
     } else {
         //
         // TODO: implement your estimation here
-        //
+        //HCX
         // get deltas:
-
+        int curr_idx = 1;
+        int prev_idx = 0;//Why?
+        Eigen::Vector3d angular_delta;
+        GetAngularDelta(curr_idx, prev_idx,angular_delta);
+        Eigen::Matrix3d R_curr, R_prev;
         // update orientation:
-
-        // get velocity delta:
-
+        UpdateOrientation(angular_delta,R_curr, R_prev);
+        double delta_t;
+        Eigen::Vector3d vel_delta;
+         // get velocity delta:
+        GetVelocityDelta(curr_idx,prev_idx,R_curr,R_prev,delta_t,vel_delta);
         // update position:
-
-        // move forward -- 
+        UpdatePosition(delta_t,vel_delta);     // move forward -- 
         // NOTE: this is NOT fixed. you should update your buffer according to the method of your choice:
         imu_data_buff_.pop_front();
     }
