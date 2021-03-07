@@ -335,7 +335,7 @@ void Activity::UpdatePosition(const double &delta_t, const Eigen::Vector3d &velo
 } // namespace estimator
 
 } // namespace imu_integration
-
+//TODO: save the trajectory 
 /*
 bool EvaluationFlow::SaveTrajectory() {
     static std::ofstream ground_truth, laser_odom;

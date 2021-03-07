@@ -171,7 +171,7 @@ def gnss_ins_sim_recorder():
                 msg = Imu()
                 # a. set header:
                 msg.header.frame_id = 'NED'
-                msg.header.stamp = timestamp_start + rospy.Duration.from_sec(measurement['stamp']) #TODO: check the timestamp ,
+                msg.header.stamp = timestamp_start + rospy.Duration.from_sec(measurement['stamp'])
                 #rospy.logwarn("msg timestamp is {}".format(msg.header.stamp))
 
                 # b. set orientation estimation:
@@ -185,9 +185,7 @@ def gnss_ins_sim_recorder():
                 msg.angular_velocity.z = measurement['data']['gyro_z']
                 msg.linear_acceleration.x = measurement['data']['accel_x']
                 msg.linear_acceleration.y = measurement['data']['accel_y']
-                msg.linear_acceleration.z = measurement['data']['accel_z']             
-                msg.linear_acceleration.z = measurement['data']['accel_z']
-                msg.linear_acceleration.z = measurement['data']['accel_z']             
+                msg.linear_acceleration.z = measurement['data']['accel_z'] #TODO: consider abtout gravity                       
 
 
                 # write:
