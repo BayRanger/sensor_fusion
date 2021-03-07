@@ -78,7 +78,31 @@ def get_gnss_ins_sim(motion_def_file, fs_imu, fs_gps):
     )
 
     # imu measurements:
-    step_size = 1.0 / fs_imu
+    step_size_gps = 1.0 / fs_gps
+    step_size_imu = 1.0/ fs_imu
+    rospy.logwarn("gps step size is {}".format(step_size_gps))
+           
+    for j, (ref_pos,ref_vel) in enumerate(
+        zip(
+            sim.dmgr.get_data_all('ref_pos').data,
+            sim.dmgr.get_data_all('ref_vel').data
+            )
+        ):
+        yield {
+                'stamp': j * step_size_gps,
+                'type': "gps",
+                'data': {
+                              
+                "pos_x":ref_pos[0],
+                "pos_y":ref_pos[1],
+                "pos_z":ref_pos[2],
+                "vel_x":ref_vel[0],
+                "vel_y":ref_vel[1],
+                "vel_z":ref_vel[2]
+                }
+        }
+        
+        
     for i, (gyro, accel) in enumerate(
         zip(
             # a. gyro
@@ -88,7 +112,8 @@ def get_gnss_ins_sim(motion_def_file, fs_imu, fs_gps):
         )
     ):
         yield {
-            'stamp': i * step_size,
+            'stamp': i * step_size_imu,
+            'type': "imu",
             'data': {
                 # a. gyro:
                 'gyro_x': gyro[0],
@@ -114,6 +139,7 @@ def gnss_ins_sim_recorder():
     sample_freq_imu = rospy.get_param('/gnss_ins_sim_recorder_node/sample_frequency/imu')
     sample_freq_gps = rospy.get_param('/gnss_ins_sim_recorder_node/sample_frequency/gps')
     topic_name_imu = rospy.get_param('/gnss_ins_sim_recorder_node/topic_name')
+    topic_name_gps = rospy.get_param('/gnss_ins_sim_recorder_node/gps_topic_name')
     rosbag_output_path = rospy.get_param('/gnss_ins_sim_recorder_node/output_path')
     rosbag_output_name = rospy.get_param('/gnss_ins_sim_recorder_node/output_name')
 
@@ -135,28 +161,62 @@ def gnss_ins_sim_recorder():
     ) as bag:
         # get timestamp base:
         timestamp_start = rospy.Time.now()
+        rospy.logwarn("start timestamp is {}".format(timestamp_start))
+        if_init = False
+        rospy.logwarn("HCXxxxx")
+
 
         for measurement in imu_simulator:
-            # init:
-            msg = Imu()
-            # a. set header:
-            msg.header.frame_id = 'NED'
-            msg.header.stamp = timestamp_start + rospy.Duration.from_sec(measurement['stamp'])
-            # b. set orientation estimation:
-            msg.orientation.x = 0.0
-            msg.orientation.y = 0.0
-            msg.orientation.z = 0.0
-            msg.orientation.w = 1.0
-            # c. gyro:
-            msg.angular_velocity.x = measurement['data']['gyro_x']
-            msg.angular_velocity.y = measurement['data']['gyro_y']
-            msg.angular_velocity.z = measurement['data']['gyro_z']
-            msg.linear_acceleration.x = measurement['data']['accel_x']
-            msg.linear_acceleration.y = measurement['data']['accel_y']
-            msg.linear_acceleration.z = measurement['data']['accel_z']
+            if (measurement['type']=="imu"):
+                msg = Imu()
+                # a. set header:
+                msg.header.frame_id = 'NED'
+                msg.header.stamp = timestamp_start + rospy.Duration.from_sec(measurement['stamp']) #TODO: check the timestamp ,
+                #rospy.logwarn("msg timestamp is {}".format(msg.header.stamp))
 
-            # write:
-            bag.write(topic_name_imu, msg, msg.header.stamp)
+                # b. set orientation estimation:
+                msg.orientation.x = 0.0
+                msg.orientation.y = 0.0
+                msg.orientation.z = 0.0
+                msg.orientation.w = 1.0
+                # c. gyro:
+                msg.angular_velocity.x = measurement['data']['gyro_x']
+                msg.angular_velocity.y = measurement['data']['gyro_y']
+                msg.angular_velocity.z = measurement['data']['gyro_z']
+                msg.linear_acceleration.x = measurement['data']['accel_x']
+                msg.linear_acceleration.y = measurement['data']['accel_y']
+                msg.linear_acceleration.z = measurement['data']['accel_z']             
+                msg.linear_acceleration.z = measurement['data']['accel_z']
+                msg.linear_acceleration.z = measurement['data']['accel_z']             
+
+
+                # write:
+                bag.write(topic_name_imu, msg, msg.header.stamp)
+                #Assuming/setting both has the same freq
+            # init:
+            elif (measurement['type']=="gps"):
+                msg_gps = Odometry()
+                msg_gps.header.frame_id = 'NED'
+                msg_gps.header.stamp = timestamp_start + rospy.Duration.from_sec(measurement['stamp'])
+                #use virtual initial frame
+                if (if_init==False):
+                    x_start = measurement['data']["pos_x"]
+                    y_start = measurement['data']["pos_y"]
+                    z_start = measurement['data']["pos_z"]
+                    #reset
+                    if_init= True
+
+                msg_gps.pose.pose.position.x = measurement['data']["pos_x"] - x_start
+                msg_gps.pose.pose.position.y = measurement['data']["pos_y"] - y_start
+                msg_gps.pose.pose.position.z = measurement['data']["pos_z"] - z_start
+                msg_gps.twist.twist.linear.x = measurement['data']["vel_x"] 
+                msg_gps.twist.twist.linear.y = measurement['data']["vel_y"] 
+                msg_gps.twist.twist.linear.z = measurement['data']["vel_z"] 
+                #rospy.logwarn("HCXxxxx {} {} {}".format(msg_gps.twist.twist.linear.x,msg_gps.twist.twist.linear.y,msg_gps.twist.twist.linear.y))
+
+                bag.write(topic_name_gps,msg_gps,msg_gps.header.stamp)
+
+                
 
 if __name__ == '__main__':
     try:

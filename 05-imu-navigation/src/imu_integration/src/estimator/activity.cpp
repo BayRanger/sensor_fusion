@@ -113,6 +113,8 @@ bool Activity::UpdatePose(void) {
     if (!initialized_) {
         // use the latest measurement for initialization:
         OdomData &odom_data = odom_data_buff_.back();
+        //OdomData &odom_data = odom_data_buff_.back();
+
         IMUData imu_data = imu_data_buff_.back();
 
         pose_ = odom_data.pose;
@@ -234,6 +236,7 @@ bool Activity::GetAngularDelta(
     Eigen::Vector3d angular_vel_prev = GetUnbiasedAngularVel(imu_data_prev.angular_velocity);
 
     angular_delta = 0.5*delta_t*(angular_vel_curr + angular_vel_prev);
+    //angular_delta = delta_t*(angular_vel_prev);
 
     return true;
 }
@@ -332,3 +335,37 @@ void Activity::UpdatePosition(const double &delta_t, const Eigen::Vector3d &velo
 } // namespace estimator
 
 } // namespace imu_integration
+
+/*
+bool EvaluationFlow::SaveTrajectory() {
+    static std::ofstream ground_truth, laser_odom;
+    static bool is_file_created = false;
+
+    if (!is_file_created) {
+        if (!FileManager::CreateDirectory(WORK_SPACE_PATH + "/slam_data/trajectory"))
+            return false;
+        if (!FileManager::CreateFile(ground_truth, WORK_SPACE_PATH + "/slam_data/trajectory/ground_truth.txt"))
+            return false;
+        if (!FileManager::CreateFile(laser_odom, WORK_SPACE_PATH + "/slam_data/trajectory/laser_odom.txt"))
+            return false;
+        is_file_created = true;
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            ground_truth << gnss_odometry_(i, j);
+            laser_odom << laser_odometry_(i, j);
+            if (i == 2 && j == 3) {
+                ground_truth << std::endl;
+                laser_odom << std::endl;
+            } else {
+                ground_truth << " ";
+                laser_odom << " ";
+            }
+        }
+    }
+
+    return true;
+}
+
+*/

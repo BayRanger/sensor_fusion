@@ -103,7 +103,7 @@ void Activity::GetGroundTruth(void) {
     double rho_x_w_xy = kRhoX*kOmegaXY;
     double rho_y_w_xy = kRhoY*kOmegaXY;
     double rho_z_w_z = kRhoZ*kOmegaZ;
-
+//What is p? p is position
     Eigen::Vector3d p(
         kRhoX*cos_w_xy_t, 
         kRhoY*sin_w_xy_t, 
@@ -138,8 +138,8 @@ void Activity::GetGroundTruth(void) {
 
     // transform to body frame:
     R_gt_ = EulerAnglesToRotation(euler_angles);
-    t_gt_ = p;
-    v_gt_ = v;
+    t_gt_ = p;//position
+    v_gt_ = v;//velocity
     // a. angular velocity:
     angular_vel_ = EulerAngleRatesToBodyAngleRates(euler_angles, euler_angle_rates);
     // b. linear acceleration:
