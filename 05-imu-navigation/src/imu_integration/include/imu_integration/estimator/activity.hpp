@@ -14,12 +14,13 @@
 
 // config:
 #include "imu_integration/config/config.hpp"
-
 // subscribers:
 #include "imu_integration/subscriber/imu_subscriber.hpp"
 #include "imu_integration/subscriber/odom_subscriber.hpp"
 
 #include <nav_msgs/Odometry.h>
+#include <string>
+#include <boost/filesystem.hpp>
 
 namespace imu_integration {
 
@@ -30,12 +31,20 @@ class Activity {
     Activity(void);
     void Init(void);
     bool Run(void);
+    class FileManager{
+    public:
+    static bool CreateFile(std::ofstream& ofs, std::string file_path);
+    static bool CreateDirectory(std::string directory_path);
+};
   private:
     // workflow:
     bool ReadData(void);
     bool HasData(void);
     bool UpdatePose(void);
     bool PublishPose(void);
+    bool SaveTrajectory(void);
+
+
 
     // utils:
     /**
@@ -96,6 +105,12 @@ class Activity {
      * @return void
      */
     void UpdatePosition(const double &delta_t, const Eigen::Vector3d &velocity_delta);
+
+    /** @brief save the data of the poses
+     * @param pose data
+     * @return void
+     */
+  
 
   private:
     // node handler:

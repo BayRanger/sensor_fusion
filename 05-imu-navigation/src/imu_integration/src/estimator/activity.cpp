@@ -22,6 +22,26 @@ Activity::Activity(void)
     // linear acceleration bias:
     linear_acc_bias_(0.0, 0.0, 0.0)
 {}
+bool Activity::FileManager::CreateFile(std::ofstream& ofs, std::string file_path) {
+    ofs.open(file_path.c_str(), std::ios::app);
+    if (!ofs) {
+        LOG(WARNING) << "无法生成文件: " << file_path;
+        return false;
+    }
+
+    return true;
+}
+
+bool Activity::FileManager::CreateDirectory(std::string directory_path) {
+    if (!boost::filesystem::is_directory(directory_path)) {
+        boost::filesystem::create_directory(directory_path);
+    }
+    if (!boost::filesystem::is_directory(directory_path)) {
+        LOG(WARNING) << "无法建立文件夹: " << directory_path;
+        return false;
+    }
+    return true;
+}
 
 void Activity::Init(void) {
     // parse IMU config:
@@ -72,6 +92,9 @@ bool Activity::Run(void) {
     while(HasData()) {
         if (UpdatePose()) {
             PublishPose();
+            //TODO: publish data
+            SaveTrajectory();
+
         }
     }
 
@@ -329,6 +352,31 @@ void Activity::UpdatePosition(const double &delta_t, const Eigen::Vector3d &velo
     //
     pose_.block<3, 1>(0, 3) += delta_t*vel_ + 0.5*delta_t*velocity_delta;
     vel_ += velocity_delta;
+}
+
+bool Activity::SaveTrajectory(){
+    static std::ofstream estimated_odom;
+    static bool is_file_created =false;
+    static std::string workspace_path = "/home/chahe/project/sensor-fusion-for-localization-and-mapping/workspace/data";
+    if (!is_file_created) {
+        if (!FileManager::CreateDirectory(workspace_path + "/odom_data/trajectory"))
+            return false;
+        if (!FileManager::CreateFile(estimated_odom, workspace_path + "/odom_data/trajectory/estimated_odom.txt"))
+            return false;
+        is_file_created = true;
+    }
+        for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            estimated_odom << pose_(i, j);
+            if (i == 2 && j == 3) {
+                estimated_odom << std::endl;
+            } else {
+                estimated_odom << " ";
+            }
+        }
+    }
+
+    return true;
 }
 
 
