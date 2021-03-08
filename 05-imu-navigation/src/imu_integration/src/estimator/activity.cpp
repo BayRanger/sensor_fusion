@@ -16,7 +16,7 @@ Activity::Activity(void)
     : private_nh_("~"), 
     initialized_(false),
     // gravity acceleration:
-    G_(0, 0, -9.81),
+    G_(0, 0, -9.7942),
     // angular velocity bias:
     angular_vel_bias_(0.0, 0.0, 0.0),
     // linear acceleration bias:
@@ -51,7 +51,7 @@ void Activity::Init(void) {
     // a. gravity constant:
     private_nh_.param("imu/gravity/x", imu_config_.gravity.x,  0.0);
     private_nh_.param("imu/gravity/y", imu_config_.gravity.y,  0.0);
-    private_nh_.param("imu/gravity/z", imu_config_.gravity.z, -9.81);
+    private_nh_.param("imu/gravity/z", imu_config_.gravity.z, -9.7942);
     G_.x() = imu_config_.gravity.x;
     G_.y() = imu_config_.gravity.y;
     G_.z() = imu_config_.gravity.z;
@@ -258,8 +258,8 @@ bool Activity::GetAngularDelta(
     Eigen::Vector3d angular_vel_curr = GetUnbiasedAngularVel(imu_data_curr.angular_velocity);
     Eigen::Vector3d angular_vel_prev = GetUnbiasedAngularVel(imu_data_prev.angular_velocity);
 
-    angular_delta = 0.5*delta_t*(angular_vel_curr + angular_vel_prev);
-    //angular_delta = delta_t*(angular_vel_prev);
+    //angular_delta = 0.5*delta_t*(angular_vel_curr + angular_vel_prev);//TODO: HCX
+    angular_delta = 0*(angular_vel_prev);
 
     return true;
 }
