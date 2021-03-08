@@ -8,6 +8,4 @@
 
         <!-- custom configuration -->
     </node>
-
-     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find imu_integration)/rviz/imu_integration.rviz" required="true" /> 
 </launch>

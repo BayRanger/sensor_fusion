@@ -259,7 +259,7 @@ bool Activity::GetAngularDelta(
     Eigen::Vector3d angular_vel_prev = GetUnbiasedAngularVel(imu_data_prev.angular_velocity);
 
     //angular_delta = 0.5*delta_t*(angular_vel_curr + angular_vel_prev);//TODO: HCX
-    angular_delta = 0*(angular_vel_prev);
+    angular_delta = delta_t*(angular_vel_prev);
 
     return true;
 }
