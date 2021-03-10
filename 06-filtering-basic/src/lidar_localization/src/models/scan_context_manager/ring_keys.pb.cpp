@@ -2,6 +2,7 @@
 // source: ring_keys.proto
 
 #include "lidar_localization/models/scan_context_manager/ring_keys.pb.h"
+
 #include <algorithm>
 
 #include <google/protobuf/io/coded_stream.h>
