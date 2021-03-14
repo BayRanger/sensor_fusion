@@ -229,6 +229,7 @@ bool ErrorStateKalmanFilter::Update(const IMUData &imu_data) {
     Eigen::Vector3d linear_acc_mid;
     Eigen::Vector3d angular_vel_mid;
     imu_data_buff_.push_back(imu_data);
+    //get updated linear acceleration and angular velocity
     UpdateOdomEstimation(linear_acc_mid, angular_vel_mid);
     imu_data_buff_.pop_front();
 
@@ -517,7 +518,6 @@ void ErrorStateKalmanFilter::UpdatePosition(
 void ErrorStateKalmanFilter::UpdateOdomEstimation(
     Eigen::Vector3d &linear_acc_mid, Eigen::Vector3d &angular_vel_mid) {
   //
-  // TODO: this is one possible solution to previous chapter, IMU Navigation,
   // assignment
   //
   static Eigen::Vector3d w_b = Eigen::Vector3d::Zero();
@@ -595,15 +595,24 @@ void ErrorStateKalmanFilter::UpdateErrorEstimation(
   F_1st = T * F_;
   F_2nd = 0.5 * T * F_ * F_1st;
   // approximate to 2nd order:
-  MatrixF F = MatrixF::Identity() + F_1st + F_2nd;
-  MatrixB B = T * B_;
+  //以误差量作为状态量进行卡尔曼滤波
+  MatrixF F = MatrixF::Identity() + F_1st + F_2nd;//<15*15>
+  MatrixB B = T * B_;//<15*12>
   B.block<6, 6>(6, 6) = Eigen::Matrix<double, 6, 6>::Identity() * sqrt(T);
 
   //
   // TODO: perform Kalman prediction
   //
-  X_ = X_;                                          // fix this
-  P_ = P_ ; // fix this
+  double n_a = COV.PROCESS.GYRO;
+  double n_w = COV.PROCESS.ACCEL;
+  double n_ba = COV.PROCESS.BIAS_ACCEL;
+  double n_bw = COV.PROCESS.BIAS_GYRO;
+  Eigen::Matrix<double, 12, 1> w_vec;
+  w_vec<<n_a,n_a,n_a,n_w,n_w,n_w,n_ba,n_ba,n_ba,n_bw,n_bw,n_bw;
+
+  X_ = F*X_+B*w_vec;    
+  Eigen::Matrix<double,12,12> Q=w_vec.array().matrix().asDiagonal();
+  P_ = F*P_*F.transpose()+ B*Q*B.transpose() ;  
 }
 
 /**
@@ -616,13 +625,17 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
     Eigen::MatrixXd &K) {
   //
   // TODO: set measurement:
-  //
-  Eigen::Vector3d P_nn_obs = Eigen::Vector3d::Zero(); // fix this
-  Eigen::Vector3d R_nn_obs = Eigen::Matrix3d::Identity(); // fix this
+  //有误差的：预测值　－　观测值
+  Eigen::Vector3d P_nn_obs = X_.block<3,1>(0,3)-T_nb.block<3,1>(0,3);
 
+  Eigen::Matrix3d R_check = X_.block<3,3>(0,0);
+  Eigen::Matrix3d R_hat = T_nb.block<3,3>(0,0);
+  Eigen::Matrix3d R_delta = R_hat.transpose()*R_check-Eigen::Matrix3d::Identity();
+  Eigen::Vector3d R_nn_obs={R_delta(2,1),R_delta(0,2),R_delta(1,0)};
+  //= Eigen::Matrix3d::Identity(); // fix this
+//pose.rotation
   YPose_.block<3, 1>(0, 0) = P_nn_obs;
   YPose_.block<3, 1>(3, 0) = R_nn_obs;
-
   Y = YPose_;
 
   // set measurement equation:
@@ -631,8 +644,15 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
   //
   // TODO: set Kalman gain:
   //
-  MatrixRPose R = RPose_; // fix this
-  K = K;                  // fix this
+  double R_pos =COV.MEASUREMENT.POSI;
+  double R_vel =COV.MEASUREMENT.VEL;
+  Eigen::Matrix<double, 6, 1> R_trace;
+  R_trace<< R_pos,R_pos,R_pos,R_vel,R_vel,R_vel;
+  RPose_ = R_trace.array().matrix().asDiagonal();
+  MatrixRPose R = RPose_;
+  MatrixCPose C= Eigen::MatrixXd::Identity();
+  //G is fixed
+  K = P_*G.transpose()*(G*P_*G.transpose() + C*RPose_*C ).inverse();//assuming C.transpose =C, because c is identity matrix
 
 }
 
@@ -660,8 +680,9 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
   //
   // TODO: perform Kalman correct:
   //
-  P_ = P_; // fix this
-  X_ = X_;              // fix this
+  MatrixGPose Iden_mat = Eigen::MatrixXd::Identity();
+  P_ = (Iden_mat - K*G)*P_; 
+  X_ = X_ + K*(Y-G*X_);           
 }
 
 /**
@@ -674,14 +695,14 @@ void ErrorStateKalmanFilter::EliminateError(void) {
   // TODO: correct state estimation using the state of ESKF
   //
   // a. position:
-  pose_.block<3, 1>(0, 3) =
-          pose_.block<3, 1>(0, 3); // fix this
+  pose_.block<3, 1>(0, 3) =pose_.block<3, 1>(0, 3) - X_.block<3, 1>(INDEX_ERROR_POS, 0); 
   // b. velocity:
-  vel_ = vel_; // fix this
+  vel_ = vel_ - X_.block<3, 1>(INDEX_ERROR_VEL, 0);
   // c. orientation:
-  Eigen::Matrix3d C_nn =
+  Eigen::Matrix3d C_nn =//exponential map
       Sophus::SO3d::exp(X_.block<3, 1>(INDEX_ERROR_ORI, 0)).matrix();
-  pose_.block<3, 3>(0, 0) = pose_.block<3, 3>(0, 0); // fix this
+  Eigen::Matrix3d Iden_mat=Eigen::MatrixXd::Identity();
+  pose_.block<3, 3>(0, 0) = pose_.block<3, 3>(0, 0)*(Iden_mat-C_nn); // fix this
 
   // d. gyro bias:
   if (IsCovStable(INDEX_ERROR_GYRO)) {
