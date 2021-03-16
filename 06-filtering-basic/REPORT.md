@@ -34,6 +34,17 @@ rmse	0.916796
 sse	2942.641849
 std	0.179125
 
+without gyro and accel
+
+
+max	1.500344
+mean	0.900750
+median	0.893803
+min	0.161967
+rmse	0.916304
+sse	3377.763876
+std	0.168113
+
 2. The result of untuned filter data
 
 max	1.891277
@@ -43,6 +54,16 @@ min	0.419038
 rmse	0.917990
 sse	2950.309768
 std	0.184551
+
+without gyro and accel
+
+max	1.748696
+mean	0.909889
+median	0.905628
+min	0.059124
+rmse	0.933167
+sse	3503.227476
+std	0.207127
 
 **parameter 2**
 
@@ -70,6 +91,17 @@ rmse	0.287662
 sse	349.865310
 std	0.173281
 
+
+Without accl and gyro bias
+
+max	1.500344
+mean	0.900558
+median	0.893220
+min	0.161967
+rmse	0.915732
+sse	3596.603998
+std	0.166014
+
 4. the result of filter data
 
 max	1.160671
@@ -79,6 +111,16 @@ min	0.012108
 rmse	0.295216
 sse	368.481544
 std	0.171270
+
+Without accl and gyro bias
+
+max	1.625812
+mean	0.913063
+median	0.903699
+min	0.059087
+rmse	0.941496
+sse	3801.836272
+std	0.229632
 
 **parameter 3**
 
@@ -106,6 +148,16 @@ rmse	0.917140
 sse	3584.959773
 std	0.165872
 
+without gyro and accel bias
+
+max	1.500344
+mean	0.902623
+median	0.894268
+min	0.161967
+rmse	0.917727
+sse	3672.929950
+std	0.165810
+
 6. the result of filter data
 
 max	1.513724
@@ -115,3 +167,16 @@ min	0.055016
 rmse	0.918151
 sse	3592.871413
 std	0.172981
+
+without gyro and accel bias
+
+max	1.399959
+mean	0.791512
+median	0.770033
+min	0.058737
+rmse	0.812926
+sse	2881.961358
+std	0.185360
+
+
+Based on the provided code base, the accl bias and gyro bias will keep zero if the corresponding P  entry is larger than e-5. From my understanding, the intention is that if the intial noise exists, we will not consider its impact on the state vector as it is not accurate. After the comparison of the state vector with and without gyro and accel bias, I would say it does not make much difference.
