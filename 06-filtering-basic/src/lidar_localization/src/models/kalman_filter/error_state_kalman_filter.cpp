@@ -128,6 +128,7 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
       Eigen::Matrix3d::Identity();
   F_.block<3, 3>(INDEX_ERROR_ORI, INDEX_ERROR_ORI) =
       Sophus::SO3d::hat(-w_).matrix();
+  
 
   // f. measurement equation:
   GPose_.block<3, 3>(0, INDEX_ERROR_POS) = Eigen::Matrix3d::Identity();
@@ -603,12 +604,6 @@ void ErrorStateKalmanFilter::UpdateErrorEstimation(
   //
   // TODO: perform Kalman prediction
   //
-  double n_a = COV.PROCESS.GYRO;
-  double n_w = COV.PROCESS.ACCEL;
-  double n_ba = COV.PROCESS.BIAS_ACCEL;
-  double n_bw = COV.PROCESS.BIAS_GYRO;
-  Eigen::Matrix<double, 12, 1> w_vec;
-  w_vec << n_a, n_a, n_a, n_w, n_w, n_w, n_ba, n_ba, n_ba, n_bw, n_bw, n_bw;
 
   X_ = F * X_; //+ B * w_vec;
   P_ = F * P_ * F.transpose() + B * Q_ * B.transpose();
@@ -699,16 +694,22 @@ void ErrorStateKalmanFilter::EliminateError(void) {
   Eigen::Matrix3d Iden_mat = Eigen::MatrixXd::Identity(3, 3);
   pose_.block<3, 3>(0, 0) =
       pose_.block<3, 3>(0, 0) * (Iden_mat - C_nn); // fix this
-
+  //LOG(INFO) << std::endl
+  //          << "gyro bias " <<gyro_bias_
+  //          << std::endl;
   // d. gyro bias:
   if (IsCovStable(INDEX_ERROR_GYRO)) {
     gyro_bias_ -= X_.block<3, 1>(INDEX_ERROR_GYRO, 0);
+ 
   }
+    //    LOG(INFO) << std::endl
+    //        << "accl bias " <<accl_bias_
+    //        << std::endl; 
 
   // e. accel bias:
   if (IsCovStable(INDEX_ERROR_ACCEL)) {
     accl_bias_ -= X_.block<3, 1>(INDEX_ERROR_ACCEL, 0);
-  }
+ }
 }
 
 /**
@@ -720,6 +721,7 @@ void ErrorStateKalmanFilter::EliminateError(void) {
 bool ErrorStateKalmanFilter::IsCovStable(const int INDEX_OFSET,
                                          const double THRESH) {
   for (int i = 0; i < 3; ++i) {
+    //if noise ia large, it is not stable!
     if (P_(INDEX_OFSET + i, INDEX_OFSET + i) > THRESH) {
       return false;
     }
