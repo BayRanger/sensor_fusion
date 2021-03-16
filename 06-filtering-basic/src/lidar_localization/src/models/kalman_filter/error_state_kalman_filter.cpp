@@ -645,8 +645,6 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
   //
   // TODO: set Kalman gain:
   //
-  double R_pos = COV.MEASUREMENT.POSI;
-  double R_vel = COV.MEASUREMENT.VEL;
   MatrixRPose R = RPose_;
   MatrixCPose C = Eigen::MatrixXd::Identity(6, 6);
   // G is fixed
