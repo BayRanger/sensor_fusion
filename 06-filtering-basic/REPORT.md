@@ -36,7 +36,6 @@ std	0.179125
 
 without gyro and accel
 
-
 max	1.500344
 mean	0.900750
 median	0.893803
@@ -90,7 +89,6 @@ min	0.017465
 rmse	0.287662
 sse	349.865310
 std	0.173281
-
 
 Without accl and gyro bias
 
@@ -178,5 +176,8 @@ rmse	0.812926
 sse	2881.961358
 std	0.185360
 
+### Task 3
 
-Based on the provided code base, the accl bias and gyro bias will keep zero if the corresponding P  entry is larger than e-5. From my understanding, the intention is that if the intial noise exists, we will not consider its impact on the state vector as it is not accurate. After the comparison of the state vector with and without gyro and accel bias, I would say it does not make much difference.
+To erase the gyro and accelerator from the state, I have changed the dimension of vector **X**, Matrix **P**, **B**,**F** and** G** in the code. But, a more smarter way should be simply set the relevent entry as zero so as to fit the previous model.
+
+Based on the provided code base, the accl bias and gyro bias will not update if the corresponding P  entry is larger than e-5. From my understanding, the intention is that if the intial noise of gyro and acclerator exists, we will not consider its impact on the state vector as it is not accurate. Theoritically, their bais should be in consideration since it could have some influence on the state of the car. But, after the comparison of the state vector with and without gyro and accel bias, I would say it does not make much difference.

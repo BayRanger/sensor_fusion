@@ -82,8 +82,8 @@ public:
 
 private:
   // dimensions:
-  static const int DIM_STATE = 15;
-  static const int DIM_PROCESS_NOISE = 12;
+  static const int DIM_STATE = 9;
+  static const int DIM_PROCESS_NOISE = 6;
 
   static const int DIM_MEASUREMENT_POSE = 6;
   static const int DIM_MEASUREMENT_POSE_NOISE = 6;
