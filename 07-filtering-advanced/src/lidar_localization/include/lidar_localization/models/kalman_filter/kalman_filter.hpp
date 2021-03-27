@@ -27,6 +27,7 @@ public:
     enum MeasurementType {
         POSE = 0,
         POSE_VEL,
+        POSE_VEL_CONS,
         POSI,
         POSI_VEL,
         POSI_MAG,

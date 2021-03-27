@@ -100,10 +100,7 @@ private:
     static const int DIM_MEASUREMENT_POSE = 6;
     static const int DIM_MEASUREMENT_POSE_NOISE = 6;
     static const int DIM_MEASUREMENT_POSE_VEL = 9;
-    static const int DIM_MEASUREMENT_POSE_VEL_YZ = 8;
-
     static const int DIM_MEASUREMENT_POSE_VEL_NOISE = 9;
-    static const int DIM_MEASUREMENT_POSE_VEL_YZ_NOISE = 8;
     static const int DIM_MEASUREMENT_POSI = 3;
     static const int DIM_MEASUREMENT_POSI_NOISE = 3;
     static const int DIM_MEASUREMENT_POSI_VEL = 6;
@@ -115,6 +112,7 @@ private:
     static const int INDEX_ERROR_ORI = 6;
     static const int INDEX_ERROR_GYRO = 9;
     static const int INDEX_ERROR_ACCEL = 12;
+    
     // state:
     typedef Eigen::Matrix<double,                      DIM_STATE,                              1> VectorX;
     typedef Eigen::Matrix<double,                      DIM_STATE,                      DIM_STATE> MatrixP;
@@ -125,8 +123,7 @@ private:
     // measurement equation:
     typedef Eigen::Matrix<double,           DIM_MEASUREMENT_POSE,                      DIM_STATE> MatrixGPose;
     typedef Eigen::Matrix<double,       DIM_MEASUREMENT_POSE_VEL,                      DIM_STATE> MatrixGPoseVel;
-    typedef Eigen::Matrix<double,    DIM_MEASUREMENT_POSE_VEL_YZ,                      DIM_STATE> MatrixGPoseVelYZ;
-    typedef Eigen::Matrix<double,   DIM_MEASUREMENT_POSE_VEL-1,                      DIM_STATE> MatrixGPoseVelCons;
+    typedef Eigen::Matrix<double,   DIM_MEASUREMENT_POSE_VEL - 1,                      DIM_STATE> MatrixGPoseVelCons;
     typedef Eigen::Matrix<double,           DIM_MEASUREMENT_POSI,                      DIM_STATE> MatrixGPosi;
     typedef Eigen::Matrix<double,       DIM_MEASUREMENT_POSI_VEL,                      DIM_STATE> MatrixGPosiVel;
     typedef Eigen::Matrix<double,   DIM_MEASUREMENT_POSI_VEL - 1,                      DIM_STATE> MatrixGPosiVelCons;
@@ -140,8 +137,6 @@ private:
 
     typedef Eigen::Matrix<double,         DIM_MEASUREMENT_POSE_NOISE,         DIM_MEASUREMENT_POSE_NOISE> MatrixRPose;
     typedef Eigen::Matrix<double,     DIM_MEASUREMENT_POSE_VEL_NOISE,     DIM_MEASUREMENT_POSE_VEL_NOISE> MatrixRPoseVel;
-    typedef Eigen::Matrix<double,     DIM_MEASUREMENT_POSE_VEL_YZ_NOISE,     DIM_MEASUREMENT_POSE_VEL_YZ_NOISE> MatrixRPoseVelYZ;
-
     typedef Eigen::Matrix<double, DIM_MEASUREMENT_POSE_VEL_NOISE - 1, DIM_MEASUREMENT_POSE_VEL_NOISE - 1> MatrixRPoseVelCons;
     typedef Eigen::Matrix<double,         DIM_MEASUREMENT_POSI_NOISE,         DIM_MEASUREMENT_POSI_NOISE> MatrixRPosi;
     typedef Eigen::Matrix<double,     DIM_MEASUREMENT_POSI_VEL_NOISE,     DIM_MEASUREMENT_POSI_VEL_NOISE> MatrixRPosiVel;
@@ -150,7 +145,6 @@ private:
     // measurement:
     typedef Eigen::Matrix<double,           DIM_MEASUREMENT_POSE,                              1> VectorYPose;
     typedef Eigen::Matrix<double,       DIM_MEASUREMENT_POSE_VEL,                              1> VectorYPoseVel;
-    typedef Eigen::Matrix<double,       DIM_MEASUREMENT_POSE_VEL_YZ,                            1> VectorYPoseVelYZ;
     typedef Eigen::Matrix<double,   DIM_MEASUREMENT_POSE_VEL - 1,                              1> VectorYPoseVelCons;
     typedef Eigen::Matrix<double,           DIM_MEASUREMENT_POSI,                              1> VectorYPosi;
     typedef Eigen::Matrix<double,       DIM_MEASUREMENT_POSI_VEL,                              1> VectorYPosiVel;
@@ -196,16 +190,18 @@ private:
      * @return void
      */
     void ApplyMotionConstraint(void);
-  /**
-   * @brief  get angular delta
-   * @param  index_curr, current imu measurement buffer index
-   * @param  index_prev, previous imu measurement buffer index
-   * @param  angular_delta, angular delta output
-   * @return true if success false otherwise
-   */
-  bool GetAngularDelta(const size_t index_curr, const size_t index_prev,
-                       Eigen::Vector3d &angular_delta,
-                       Eigen::Vector3d &angular_vel_mid);
+    /**
+     * @brief  get angular delta
+     * @param  index_curr, current imu measurement buffer index
+     * @param  index_prev, previous imu measurement buffer index
+     * @param  angular_delta, angular delta output
+     * @return true if success false otherwise
+     */
+    bool GetAngularDelta(
+        const size_t index_curr, const size_t index_prev,
+        Eigen::Vector3d &angular_delta,
+        Eigen::Vector3d &linear_angle_mid
+    );
     /**
      * @brief  get velocity delta
      * @param  index_curr, current imu measurement buffer index
@@ -245,9 +241,8 @@ private:
      * @param  linear_acc_mid, output mid-value unbiased linear acc
      * @return void
      */
-    //void UpdateOdomEstimation(Eigen::Vector3d &linear_acc_mid);
-  void UpdateOdomEstimation(Eigen::Vector3d &linear_acc_mid,
-                            Eigen::Vector3d &angular_vel_mid);
+    void UpdateOdomEstimation(Eigen::Vector3d &linear_acc_mid, Eigen::Vector3d &linear_angle_mid);
+
     /**
      * @brief  set process equation
      * @param  C_nb, rotation matrix, body frame -> navigation frame
@@ -255,17 +250,15 @@ private:
      * @return void
      */
     void SetProcessEquation(
-        const Eigen::Matrix3d &C_nb, const Eigen::Vector3d &f_n,const Eigen::Vector3d &w_b
+        const Eigen::Matrix3d &C_nb, const Eigen::Vector3d &f_n, const Eigen::Vector3d &w_b
     );
     /**
      * @brief  update process equation
      * @param  linear_acc_mid, input mid-value unbiased linear acc
      * @return void
      */
-    //void UpdateProcessEquation(const Eigen::Vector3d &linear_acc_mid,const Eigen::Vector3d &angular_vel_mid);
-    void UpdateProcessEquation(const Eigen::Vector3d &linear_acc_mid,
-                             const Eigen::Vector3d &angular_vel_mid);
-    void UpdateErrorEstimation(const double &T, const Eigen::Vector3d &linear_acc_mid, const Eigen::Vector3d &angular_vel_mid); 
+    void UpdateProcessEquation(const Eigen::Vector3d &linear_acc_mid, const Eigen::Vector3d &linear_angle_mid);
+
     /**
      * @brief  update error estimation
      * @param  linear_acc_mid, input mid-value unbiased linear acc
@@ -273,7 +266,7 @@ private:
      */
     void UpdateErrorEstimation(
         const double &T,
-        const Eigen::Vector3d &linear_acc_mid
+        const Eigen::Vector3d &linear_acc_mid, const Eigen::Vector3d &linear_angle_mid
     );
 
     /**
@@ -297,21 +290,12 @@ private:
         Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
     );
 
-/**
- * @brief 
- * Correction step with the motion constraints
- * @param T_nb 
- * @param v_b 
- * @param w_b 
- * @param Y 
- * @param G 
- * @param K 
- */
-    void CorrectErrorEstimationPoseVelYZ(
-        const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
-        Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
-    );
 
+    void CorrectErrorEstimationPoseVelCons(
+        const Eigen::Matrix4d &T_nb, 
+        Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+    );    
+    
     /**
      * @brief  correct error estimation using position measurement
      * @param  T_nb, input position measurement
@@ -418,8 +402,6 @@ private:
 
     MatrixGPose GPose_ = MatrixGPose::Zero();
     MatrixGPoseVel GPoseVel_ = MatrixGPoseVel::Zero();
-    MatrixGPoseVelYZ GPoseVelYZ_ = MatrixGPoseVelYZ::Zero();
-
     MatrixGPoseVelCons GPoseVelCons_ = MatrixGPoseVelCons::Zero();
     MatrixGPosi GPosi_ = MatrixGPosi::Zero();
     MatrixGPosiVel GPosiVel_ = MatrixGPosiVel::Zero();
@@ -434,8 +416,6 @@ private:
 
     MatrixRPose RPose_ = MatrixRPose::Zero();
     MatrixRPoseVel RPoseVel_ = MatrixRPoseVel::Zero();
-    MatrixRPoseVelYZ RPoseVelYZ_ = MatrixRPoseVelYZ::Zero();
-
     MatrixRPosi RPosi_ = MatrixRPosi::Zero();
     MatrixRPosiVel RPosiVel_ = MatrixRPosiVel::Zero();
 
@@ -447,10 +427,9 @@ private:
     // measurement:
     VectorYPose YPose_;
     VectorYPoseVel YPoseVel_;
-    VectorYPoseVelYZ YPoseVelYZ_;
-
     VectorYPosi YPosi_;
     VectorYPosiVel YPosiVel_;
+    VectorYPoseVelCons YPoseVelCons_;
 };
 
 } // namespace lidar_localization
