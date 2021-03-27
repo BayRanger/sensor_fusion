@@ -261,7 +261,7 @@ bool ErrorStateKalmanFilter::Correct(
         measurement_.T_nb = init_pose_ * measurement_.T_nb;
 
         // correct error estimation:
-        CorrectErrorEstimation(measurement_type, measurement_);
+        CorrectErrorEstimation(measurement_type, measurement_);//TODO:MeasurementType::POSE_VEL_CONS
 
         // eliminate error:
         EliminateError();
@@ -678,7 +678,7 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVel(
     // set measurement:
     Eigen::Vector3d P_nn_obs = pose_.block<3, 1>(0,3) - T_nb.block<3, 1>(0,3);
     Eigen::Matrix3d C_bb_obs = T_nb.block<3, 3>(0,0).transpose() * pose_.block<3, 3>(0,0);
-    Eigen::Vector3d v_bb_obs = pose_.block<3, 3>(0,0).transpose()*vel_ - v_b;
+    Eigen::Vector3d v_bb_obs = pose_.block<3, 3>(0,0).transpose()*vel_ - v_b;//The TF transformation is included
 
     YPoseVel_.block<3, 1>(0, 0) = P_nn_obs;
     YPoseVel_.block<3, 1>(3, 0) = Sophus::SO3d::vee( C_bb_obs - Eigen::Matrix3d::Identity() );
@@ -689,6 +689,8 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVel(
     // set measurement equation:
     GPoseVel_.block<3, 3>(6, INDEX_ERROR_VEL) =  pose_.block<3, 3>(0,0).transpose();
     GPoseVel_.block<3, 3>(6, INDEX_ERROR_ORI) =  Sophus::SO3d::hat( pose_.block<3, 3>(0,0).transpose()*vel_ );
+    GPoseVel_.block<3, 3>(0, 0) =   Eigen::Matrix<double, 3, 3>::Identity();
+    GPoseVel_.block<3, 3>(3, 6) =   Eigen::Matrix<double, 3, 3>::Identity();
 
     G = GPoseVel_;
 
@@ -720,6 +722,8 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVelCons(
     const Eigen::Matrix4d &T_nb,
     Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
 ) {
+    //Log_info("Correct Error Estimation with Vel constraint");
+    LOG(INFO) << "Correct Error Estimation with Vel constraint" << std::endl;
     // set measurement:
     Eigen::Vector3d P_nn_obs = pose_.block<3, 1>(0,3) - T_nb.block<3, 1>(0,3);
     Eigen::Matrix3d C_bb_obs = T_nb.block<3, 3>(0,0).transpose() * pose_.block<3, 3>(0,0);
@@ -732,9 +736,12 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVelCons(
     Y = YPoseVelCons_;
 
     // set measurement equation:
-    GPoseVel_.block<3, 3>(6, INDEX_ERROR_VEL) =  pose_.block<3, 3>(0,0).transpose();
-    GPoseVel_.block<3, 3>(6, INDEX_ERROR_ORI) =  Sophus::SO3d::hat( pose_.block<3, 3>(0,0).transpose()*vel_ );
-    
+    GPoseVel_.block<3, 3>(6, 3) =  pose_.block<3, 3>(0,0).transpose();//3
+    GPoseVel_.block<3, 3>(6, 6) =  Sophus::SO3d::hat( pose_.block<3, 3>(0,0).transpose()*vel_ );
+    GPoseVel_.block<3, 3>(0, 0) =   Eigen::Matrix<double, 3, 3>::Identity();
+    GPoseVel_.block<3, 3>(3, 6) =   Eigen::Matrix<double, 3, 3>::Identity();
+
+    //ATTENTION: the matrix representation form is different 
     GPoseVelCons_.block<6, DIM_STATE>(0, 0) = GPoseVel_.block<6, DIM_STATE>(0, 0);
     GPoseVelCons_.block<2, DIM_STATE>(6, 0) = GPoseVel_.block<2, DIM_STATE>(7, 0);
 
