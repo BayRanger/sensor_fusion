@@ -163,7 +163,7 @@ void IMUPreIntegrator::ResetState(const IMUData &init_imu_data) {
     P_ = MatrixP::Zero();
 
     // reset Jacobian:
-    J_ = MatrixJ::Identity();
+    J_ = MatrixJ::Identity();//15*15
 
     // reset buffer:
     imu_data_buff_.clear();
@@ -228,36 +228,75 @@ void IMUPreIntegrator::UpdateState(void) {
     // TODO: a. update mean:
     //
     // 1. get w_mid:
+    w_mid = 0.5*(prev_w +curr_w);
     // 2. update relative orientation, so3:
+    prev_theta_ij = state.theta_ij_;
+    //state.theta_ij_
+    curr_theta_ij =(Sophus::SO3d::exp(0.5*w_mid*T))*prev_theta_ij;
     // 3. get a_mid:
+    a_mid = 0.5*(prev_theta_ij*prev_a+ curr_theta_ij*curr_a);
     // 4. update relative translation:
+    Eigen::Vector3d prev_alpha_ij = state.alpha_ij_;
+    //state.alpha_ij_ 
+    curr_alpha_ij= state.alpha_ij_+ state.beta_ij_ *T + 0.5*a_mid*T*T;
     // 5. update relative velocity:
-
-    //
+    Eigen::Vector3d prev_beta_ij_ = state.beta_ij_;
+    state.beta_ij_ = state.beta_ij_ + a_mid*T;
     // TODO: b. update covariance:
     //
     // 1. intermediate results:
-
+    Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
+    Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
     //
     // TODO: 2. set up F:
     //
     // F12 & F32:
+    auto F12 = -T*T/4*(Rab_k+state.theta_ij_*Rab_kp*(Maxtrix3d::Identity()-Sophus::SO3d::hat(w_mid)*T));
+    F_.block<3, 3>(0,3)=F12;
+    auto F32 = - T/2*(Rab_k+state.theta_ij_*Rab_kp*(Maxtrix3d::Identity()-Sophus::SO3d::hat(w_mid)*T));
+    F_.block<3, 3>(6,3)= F32;
     // F14 & F34:
+    auto F14 = -1.f/4.f *(prev_theta_ij + curr_theta_ij)*T*T;
+    F_.block<3,3>(0,9) = F14;
+    auto F34 = -1.f/2.f *(prev_theta_ij + curr_theta_ij)*T;
+    F_.block<3, 3>(6,9) = F34;
     // F15 & F35:
+    auto F15 = T*T*T/4 * R_ab_kp;
+    F_.block<3, 3>(0,12) = F15;
+    auto F35 = T*T/2*R_ab_kp;
+    F_.block<3,3>(6,12) = F35;
     // F22:
-
+    auto F22 =  Maxtrix3d::Identity() - Sophus::SO3d::hat(w_mid)*T;
+    F_.block<3,3>(3,3) = F22;
     //
     // TODO: 3. set up G:
     //
+    auto G11 = 0.25*prev_theta_ij*T*T;
+    B_.block<3,3>(0,0) = G11;
+    auto G31 = 0.5*prev_theta_ij*T*T;
+    B_.block<3,3>(6,0) = G31;
     // G11 & G31:
+    auto G12 = -T*T*T/8.f*R_ab_kp;
+    B_.block<3,3>(0,3) = G12;
+    auto G32 = -T*T/4.f*R_ab_kp;
+    B_.block<3,3>(6,0) = G32;
     // G12 & G32:
+    auto G13 = 0.25*curr_theta_ij*T*T;
+    B_.block<3,3>(0,6) = G13;
+    auto G32 = -T*T/4.f * Rab_kp;
+    B_.block<3,3>(6,3) = G32;
     // G13 & G33:
+    G14 = -T*T*T/8*Rab_kp;
+    B_.block<3, 3>(0,9)= G14;
     // G14 & G34:
+    G34 = -T*T/4* Rab_kp;
+    B_.block<6,9> = G34;
 
     // TODO: 4. update P_:
-
+    P_= F_*P_*F_.transpose() + B_*Q_*B_.transpose();
     // 
     // TODO: 5. update Jacobian:
+    J_ = F_*J_;
     //
 }
 
