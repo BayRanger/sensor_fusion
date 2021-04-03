@@ -68,10 +68,22 @@ public:
         _estimate = PRVAG();
     }
 
+    /*
+    oplusImpl：顶点更新函数。非常重要的一个函数，主要用于优化过程中增量△x 的计算。我们根据增量方程计算出增量之后，就是通过这个函数对估计值进行调整的，因此这个函数的内容一定要重视。
+
+*/
     virtual void oplusImpl(const double *update) override {
         //
         // TODO: do update
-        //
+        PRVAG deltaX(update);
+        _estimate.pos+= deltaX.pos;
+        _estimate.ori*=deltaX.ori;
+        _estimate.vel+= deltaX.vel;
+        _estimate.b_a+=deltaX.b_a;
+        _estimate.b_g+=deltaX.b_g; 
+        updateDeltaBiases(deltaX.b_a, deltaX.b_g);
+
+
     }
 
     bool isUpdated(void) const { return _is_updated; }

@@ -59,15 +59,23 @@ public:
 		//
 		// TODO: update pre-integration measurement caused by bias change:
 		// 
+		if( v0->isUpdated() ){
+			Eigen::Vector3d d_b_a_i, d_b_g_i;
+			v0->getDeltaBiases( d_b_a_i, d_b_g_i );
+			updateMeasurement( d_b_a_i, d_b_g_i );
+		}
 
 		//
 		// TODO: compute error:
 		//
-		_error.block<3, 1>(INDEX_P, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_R, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_V, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_A, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_G, 0) = Eigen::Vector3d::Zero();
+		Eigen::Vector3d alpha_delta = _measurement.block<3, 1>(INDEX_P, 0);
+		Eigen::Vector3d theta_delta = _measurement.block<3, 1>(INDEX_R, 0);
+		Eigen::Vector3d beta_delta = _measurement.block<3, 1>(INDEX_V, 0);
+		_error.block<3, 1>(INDEX_P, 0) = ori_i.inverse() * (pos_j -pos_i - vel_i*T_ + 0.5*g_*T_*T_) - alpha_delta;
+		_error.block<3, 1>(INDEX_R, 0) =(Sophus::SO3d::exp(theta_delta).inverse() * ori_i.inverse() *ori_j ).log();
+		_error.block<3, 1>(INDEX_V, 0) = ori_i.inverse() * (vel_j - vel_i + g_*T_) -beta_ij;
+		_error.block<3, 1>(INDEX_A, 0) = b_a_j - b_a_i;
+		_error.block<3, 1>(INDEX_G, 0) =  b_g_j - b_g_i;
     }
 
 	void setT(const double &T) {
@@ -156,7 +164,7 @@ public:
 private:
 	double T_ = 0.0;
 
-	Eigen::Vector3d g_ = Eigen::Vector3d::Zero();
+	Eigen::Vector3d g_ = Eigen::Vector3d::Zero();//hcx why
 
 	Eigen::MatrixXd J_;
 };

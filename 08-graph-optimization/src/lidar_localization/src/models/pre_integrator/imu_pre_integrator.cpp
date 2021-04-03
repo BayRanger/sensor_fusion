@@ -232,19 +232,22 @@ void IMUPreIntegrator::UpdateState(void) {
     // 2. update relative orientation, so3:
     prev_theta_ij = state.theta_ij_;
     //state.theta_ij_
-    curr_theta_ij =(Sophus::SO3d::exp(0.5*w_mid*T))*prev_theta_ij;
+    d_theta_ij = Sophus::SO3d::exp(w_mid*T);
+    curr_theta_ij =prev_theta_ij*d_theta_ij;
     // 3. get a_mid:
     a_mid = 0.5*(prev_theta_ij*prev_a+ curr_theta_ij*curr_a);
     // 4. update relative translation:
     Eigen::Vector3d prev_alpha_ij = state.alpha_ij_;
     //state.alpha_ij_ 
-    curr_alpha_ij= state.alpha_ij_+ state.beta_ij_ *T + 0.5*a_mid*T*T;
+    state.alpha_ij_= state.alpha_ij_+ state.beta_ij_ *T + 0.5*a_mid*T*T;
     // 5. update relative velocity:
-    Eigen::Vector3d prev_beta_ij_ = state.beta_ij_;
+    //Eigen::Vector3d prev_beta_ij_ = state.beta_ij_;
     state.beta_ij_ = state.beta_ij_ + a_mid*T;
     // TODO: b. update covariance:
     //
     // 1. intermediate results:
+    prev_R = prev_theta_ij.matrix();
+    curr_R = curr_theta_ij.matrix();
     Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
     Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
     //
