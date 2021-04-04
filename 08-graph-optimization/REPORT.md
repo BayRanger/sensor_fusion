@@ -1,3 +1,6 @@
-Task:
+Task1:
 
-Current state: fill in the relevant code block, Due to the environment problem, will do debug later on the weekend.
+The codeblock are filled in. The green line shows the optimized tragectory.
+
+
+<img src="doc/images/map.png" alt="Terminator" width="100%"><img src="doc/images/odom.png" alt="Terminator" width="100%">
