@@ -240,6 +240,8 @@ void IMUPreIntegrator::UpdateState(void) {
     Eigen::Vector3d prev_alpha_ij = state.alpha_ij_;
     //state.alpha_ij_ 
     state.alpha_ij_= state.alpha_ij_+ state.beta_ij_ *T + 0.5*a_mid*T*T;
+    Eigen::Vector3d curr_alpha_ij = state.alpha_ij_;
+
     // 5. update relative velocity:
     //Eigen::Vector3d prev_beta_ij_ = state.beta_ij_;
     state.beta_ij_ = state.beta_ij_ + a_mid*T;
@@ -248,52 +250,55 @@ void IMUPreIntegrator::UpdateState(void) {
     // 1. intermediate results:
     prev_R = prev_theta_ij.matrix();
     curr_R = curr_theta_ij.matrix();
-    Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
-    Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
+    Eigen::Matrix3d R_a_0_x = Sophus::SO3d::hat(prev_alpha_ij - state.b_g_i_);
+    Eigen::Matrix3d R_a_1_x = Sophus::SO3d::hat(curr_alpha_ij - state.b_g_i_);
+    Eigen::Matrix3d R_w_x =  Sophus::SO3d::hat(w_mid);
+    //Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
+    //Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
     //
     // TODO: 2. set up F:
     //
     // F12 & F32:
-    auto F12 = -T*T/4*(Rab_k+state.theta_ij_*Rab_kp*(Maxtrix3d::Identity()-Sophus::SO3d::hat(w_mid)*T));
+    auto F12 = - T*T/4*(prev_R*R_a_0_x+curr_R*R_a_1_x*(Eigen::Matrix3d::Identity()-R_w_x));
     F_.block<3, 3>(0,3)=F12;
-    auto F32 = - T/2*(Rab_k+state.theta_ij_*Rab_kp*(Maxtrix3d::Identity()-Sophus::SO3d::hat(w_mid)*T));
+    auto F32 = - T/2*(prev_R*R_a_0_x+curr_R*R_a_1_x*(Eigen::Matrix3d::Identity()-R_w_x));
     F_.block<3, 3>(6,3)= F32;
     // F14 & F34:
-    auto F14 = -1.f/4.f *(prev_theta_ij + curr_theta_ij)*T*T;
+    auto F14 = -1.f/4.f *(prev_R + curr_R)*T*T;
     F_.block<3,3>(0,9) = F14;
-    auto F34 = -1.f/2.f *(prev_theta_ij + curr_theta_ij)*T;
+    auto F34 = -1.f/2.f *(prev_R + curr_R)*T;
     F_.block<3, 3>(6,9) = F34;
     // F15 & F35:
-    auto F15 = T*T*T/4 * R_ab_kp;
+    auto F15 = T*T*T/4 * curr_R*R_a_1_x;
     F_.block<3, 3>(0,12) = F15;
-    auto F35 = T*T/2*R_ab_kp;
+    auto F35 = T*T/2*curr_R*R_a_1_x;
     F_.block<3,3>(6,12) = F35;
     // F22:
-    auto F22 =  Maxtrix3d::Identity() - Sophus::SO3d::hat(w_mid)*T;
+    auto F22 =  Eigen::Matrix3d::Identity() - R_w_x*T;
     F_.block<3,3>(3,3) = F22;
     //
     // TODO: 3. set up G:
     //
-    auto G11 = 0.25*prev_theta_ij*T*T;
-    B_.block<3,3>(0,0) = G11;
-    auto G31 = 0.5*prev_theta_ij*T*T;
-    B_.block<3,3>(6,0) = G31;
     // G11 & G31:
-    auto G12 = -T*T*T/8.f*R_ab_kp;
-    B_.block<3,3>(0,3) = G12;
-    auto G32 = -T*T/4.f*R_ab_kp;
-    B_.block<3,3>(6,0) = G32;
+    auto G11 = 0.25*prev_R*R_a_1_x*T*T;
+    B_.block<3,3>(0,0) = G11;
+    auto G31 = 0.5*prev_R*T;
+    B_.block<3,3>(6,0) = G31;
     // G12 & G32:
-    auto G13 = 0.25*curr_theta_ij*T*T;
-    B_.block<3,3>(0,6) = G13;
-    auto G32 = -T*T/4.f * Rab_kp;
-    B_.block<3,3>(6,3) = G32;
+    auto G12 = -T*T*T/8.f*curr_R*R_a_1_x;
+    B_.block<3,3>(0,3) = G12;
+    auto G32 = -T*T/4.f*curr_R*R_a_1_x;
+    B_.block<3,3>(6,0) = G32;
     // G13 & G33:
-    G14 = -T*T*T/8*Rab_kp;
-    B_.block<3, 3>(0,9)= G14;
+    auto G13 = 0.25*curr_R*T*T;
+    B_.block<3,3>(0,6) = G13;
+    auto G33 = -1/2.f *curr_R*T;
+    B_.block<3,3>(6,3) = G33;
     // G14 & G34:
-    G34 = -T*T/4* Rab_kp;
-    B_.block<6,9> = G34;
+    auto G14 = -T*T*T/8*curr_R*R_a_1_x;
+    B_.block<3, 3>(0,9)= G14;
+    auto G34 = -T*T/4* curr_R*R_a_1_x;
+    B_.block<3, 3>(6,9) = G34;
 
     // TODO: 4. update P_:
     P_= F_*P_*F_.transpose() + B_*Q_*B_.transpose();

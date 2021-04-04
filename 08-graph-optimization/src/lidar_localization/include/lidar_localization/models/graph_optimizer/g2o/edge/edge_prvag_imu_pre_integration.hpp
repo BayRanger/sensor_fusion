@@ -73,7 +73,7 @@ public:
 		Eigen::Vector3d beta_delta = _measurement.block<3, 1>(INDEX_V, 0);
 		_error.block<3, 1>(INDEX_P, 0) = ori_i.inverse() * (pos_j -pos_i - vel_i*T_ + 0.5*g_*T_*T_) - alpha_delta;
 		_error.block<3, 1>(INDEX_R, 0) =(Sophus::SO3d::exp(theta_delta).inverse() * ori_i.inverse() *ori_j ).log();
-		_error.block<3, 1>(INDEX_V, 0) = ori_i.inverse() * (vel_j - vel_i + g_*T_) -beta_ij;
+		_error.block<3, 1>(INDEX_V, 0) = ori_i.inverse() * (vel_j - vel_i + g_*T_) -beta_delta;
 		_error.block<3, 1>(INDEX_A, 0) = b_a_j - b_a_i;
 		_error.block<3, 1>(INDEX_G, 0) =  b_g_j - b_g_i;
     }
