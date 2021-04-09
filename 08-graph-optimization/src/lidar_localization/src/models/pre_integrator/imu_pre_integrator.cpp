@@ -52,12 +52,12 @@ IMUPreIntegrator::IMUPreIntegrator(const YAML::Node& node) {
     Q_.block<3, 3>(INDEX_R_GYR_PREV, INDEX_R_GYR_PREV) = COV.RANDOM_WALK.GYRO * Eigen::Matrix3d::Identity();
 
     // c. process equation, state propagation:
-    //F_.block<3, 3>(INDEX_ALPHA,  INDEX_BETA) =  Eigen::Matrix3d::Identity();
-    //F_.block<3, 3>(INDEX_THETA,   INDEX_B_G) = -Eigen::Matrix3d::Identity();
+    F_.block<3, 3>(INDEX_ALPHA,  INDEX_BETA) =  Eigen::Matrix3d::Identity();
+    F_.block<3, 3>(INDEX_THETA,   INDEX_B_G) = -Eigen::Matrix3d::Identity();
 
     // d. process equation, noise input:
-    //B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_PREV) = B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_CURR) = 0.50 * Eigen::Matrix3d::Identity();
-    //B_.block<3, 3>(INDEX_B_A, INDEX_R_ACC_PREV) = B_.block<3, 3>(INDEX_B_G, INDEX_R_GYR_PREV) = Eigen::Matrix3d::Identity();
+    B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_PREV) = B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_CURR) = 0.50 * Eigen::Matrix3d::Identity();
+    B_.block<3, 3>(INDEX_B_A, INDEX_R_ACC_PREV) = B_.block<3, 3>(INDEX_B_G, INDEX_R_GYR_PREV) = Eigen::Matrix3d::Identity();
 }
 
 /**
@@ -255,7 +255,8 @@ void IMUPreIntegrator::UpdateState(void) {
     Eigen::Matrix3d R_a_1_x = Sophus::SO3d::hat(curr_a);
     Eigen::Matrix3d R_w_x =  Sophus::SO3d::hat(w_mid);
     Eigen::Matrix3d R_w_t =  Sophus::SO3d::hat(w_mid)*T;
-    dR_inv = d_theta_ij.inverse().matrix();
+    //dR_inv = d_theta_ij.inverse().matrix();
+    dR_inv = Eigen::Matrix3d::Identity() -  Sophus::SO3d::hat(w_mid)*T;
 
     //Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
     //Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
@@ -282,25 +283,29 @@ void IMUPreIntegrator::UpdateState(void) {
     // TODO: 3. set up G:
     //
     // G11 & G31:
-    auto G11 = 0.25*T*prev_R;
-    B_.block<3,3>(0,0) = G11;
+    
+    B_.block<3,3>(0,0) = 0.25*T*prev_R;
     auto G31 = 0.5*prev_R;
     B_.block<3,3>(6,0) = G31;
     // G12 & G32:
-    auto G12 = -T*T/8.f*curr_R*R_a_1_x;
-    B_.block<3,3>(0,3) = G12;
-    auto G32 = -T/4.f*curr_R*R_a_1_x;
-    B_.block<3,3>(6,0) = G32;
+    B_.block<3,3>(0,3) = -T*T/8.f*curr_R*R_a_1_x;
+     
+    B_.block<3,3>(6,3) = -T/4.f*curr_R*R_a_1_x;
+
+    //B22 B24
+    B_.block<3,3>(3,3) = 0.5*Eigen::Matrix3d::Identity();
+    B_.block<3,3>(3,9) = 0.5*Eigen::Matrix3d::Identity();
+
+    //B31
+    B_.block<3,3>(6,0) = 0.5*curr_R;
+
     // G13 & G33:
-    auto G13 = 0.25*T*curr_R;
-    B_.block<3,3>(0,6) = G13;
-    auto G33 = 1.f/2.f *curr_R;
-    B_.block<3,3>(6,3) = G33;
+    B_.block<3,3>(0,6) = 0.25*T*curr_R;
+    
+    B_.block<3,3>(6,6)  = 0.5f *curr_R;
     // G14 & G34:
-    auto G14 = -T*T/8.f*curr_R*R_a_1_x;
-    B_.block<3, 3>(0,9)= G14;
-    auto G34 = -T/4.f* curr_R*R_a_1_x;
-    B_.block<3, 3>(6,9) = G34;
+    B_.block<3, 3>(0,9)= -T*T/8.f*curr_R*R_a_1_x;
+    B_.block<3, 3>(6,9) = -T/4.f* curr_R*R_a_1_x;
 
     MatrixB B = T*B_ ;
 

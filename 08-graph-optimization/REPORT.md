@@ -1,8 +1,10 @@
-## Task 1&2:
+## Task 1:
 
 The codeblocks are filled in. The green line shows the optimized tragectory.
 
-benchmark of optimized tragectory with imu.
+First, the wrong map from the previous version was shown for comparison.
+
+Benchmark of the optimized tragectory with imu.
 
 max	6.798616
 mean	1.220208
@@ -12,7 +14,7 @@ rmse	1.601749
 sse	4892.595922
 std	1.037637
 
-benchmark of lidar odometry with imu.
+Benchmark of the lidar odometry with imu.
 
 max	34.013475
 mean	15.327241
@@ -22,10 +24,32 @@ rmse	17.886259
 sse	610084.133610
 std	9.219216
 
-
 <img src="doc/images/map.png" alt="Terminator" width="100%">
 
+
 <img src="doc/images/odom.png" alt="Terminator" width="100%">
+
+Obviously, it was **wrong**.
+
+after fixing the bugs, the map is obviously clearer.
+
+From the observation, we could see that the tragectory is smoother, and the map is more clear.
+
+The corresponding analysis is following.
+
+max      0.714922
+mean      0.119683
+median      0.102119
+min      0.005584
+rmse      0.144256
+sse      39.809408
+std      0.080536
+
+<img src="doc/images/odom_update.png" alt="Terminator" width="100%">
+
+
+<img src="doc/images/map_update.png" alt="Terminator" width="100%">
+
 
 ## Task 2
 
