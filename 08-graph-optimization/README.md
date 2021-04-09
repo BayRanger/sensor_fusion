@@ -27,7 +27,7 @@
 在**上侧**的Shell中, 输入如下命令, **编译lidar_localization**. 如遇到错误, 且非首次编译, 请尝试执行**catkin clean**, 清理catkin cache.
 
 ```bash
-# build:
+# build:lli
 catkin config --install && catkin build lidar_localization
 # set up session:
 source install/setup.bash
@@ -72,18 +72,18 @@ rosservice call /save_scan_context
 
 **此Demo为参考答案的演示效果**. 若未实现, 你将无法看到Demo的效果. **请你尝试理解框架, 在其中补完相关逻辑, 实现基于图优化的建图**. 你的任务是自行实现精度尽可能高的解算方法. 期待你的精彩发挥!
 
-请搜索TODO, 开始你的编码 :P. 
+请搜索TODO, 开始你的编码 :P.
 
 此处将完成作业相关的配置汇总如下:
 
 * **IMU Pre-Integration** [here](src/lidar_localization/src/models/pre_integrator/imu_pre_integrator.cpp#L178)
-
 * **G2O Vertex / Edge for IMU Pre-Integration**
-    * **Key Frame Vertex** [here](src/lidar_localization/include/lidar_localization/models/graph_optimizer/g2o/vertex/vertex_prvag.hpp)
-    * **IMU Pre-Integration Edge** [here](src/lidar_localization/include/lidar_localization/models/graph_optimizer/g2o/edge/edge_prvag_imu_pre_integration.hpp)
 
+  * **Key Frame Vertex** [here](src/lidar_localization/include/lidar_localization/models/graph_optimizer/g2o/vertex/vertex_prvag.hpp)
+  * **IMU Pre-Integration Edge** [here](src/lidar_localization/include/lidar_localization/models/graph_optimizer/g2o/edge/edge_prvag_imu_pre_integration.hpp)
 * **Module Hyper Params.**
-    * **LIO Backend Config** [here](src/lidar_localization/config/mapping/lio_back_end.yaml)
+
+  * **LIO Backend Config** [here](src/lidar_localization/config/mapping/lio_back_end.yaml)
 
 ### 良好要求: 在及格基础上, 实现和不加IMU时的效果对比和分析
 

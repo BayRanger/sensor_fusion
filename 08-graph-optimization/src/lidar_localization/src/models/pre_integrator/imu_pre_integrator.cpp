@@ -52,12 +52,12 @@ IMUPreIntegrator::IMUPreIntegrator(const YAML::Node& node) {
     Q_.block<3, 3>(INDEX_R_GYR_PREV, INDEX_R_GYR_PREV) = COV.RANDOM_WALK.GYRO * Eigen::Matrix3d::Identity();
 
     // c. process equation, state propagation:
-    F_.block<3, 3>(INDEX_ALPHA,  INDEX_BETA) =  Eigen::Matrix3d::Identity();
-    F_.block<3, 3>(INDEX_THETA,   INDEX_B_G) = -Eigen::Matrix3d::Identity();
+    //F_.block<3, 3>(INDEX_ALPHA,  INDEX_BETA) =  Eigen::Matrix3d::Identity();
+    //F_.block<3, 3>(INDEX_THETA,   INDEX_B_G) = -Eigen::Matrix3d::Identity();
 
     // d. process equation, noise input:
-    B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_PREV) = B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_CURR) = 0.50 * Eigen::Matrix3d::Identity();
-    B_.block<3, 3>(INDEX_B_A, INDEX_R_ACC_PREV) = B_.block<3, 3>(INDEX_B_G, INDEX_R_GYR_PREV) = Eigen::Matrix3d::Identity();
+    //B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_PREV) = B_.block<3, 3>(INDEX_THETA, INDEX_M_GYR_CURR) = 0.50 * Eigen::Matrix3d::Identity();
+    //B_.block<3, 3>(INDEX_B_A, INDEX_R_ACC_PREV) = B_.block<3, 3>(INDEX_B_G, INDEX_R_GYR_PREV) = Eigen::Matrix3d::Identity();
 }
 
 /**
@@ -233,7 +233,8 @@ void IMUPreIntegrator::UpdateState(void) {
     prev_theta_ij = state.theta_ij_;
     //state.theta_ij_
     d_theta_ij = Sophus::SO3d::exp(w_mid*T);
-    curr_theta_ij =prev_theta_ij*d_theta_ij;
+    state.theta_ij_ =prev_theta_ij*d_theta_ij;
+    curr_theta_ij  = state.theta_ij_;
     // 3. get a_mid:
     a_mid = 0.5*(prev_theta_ij*prev_a+ curr_theta_ij*curr_a);
     // 4. update relative translation:
@@ -250,61 +251,64 @@ void IMUPreIntegrator::UpdateState(void) {
     // 1. intermediate results:
     prev_R = prev_theta_ij.matrix();
     curr_R = curr_theta_ij.matrix();
-    Eigen::Matrix3d R_a_0_x = Sophus::SO3d::hat(prev_alpha_ij - state.b_g_i_);
-    Eigen::Matrix3d R_a_1_x = Sophus::SO3d::hat(curr_alpha_ij - state.b_g_i_);
+    Eigen::Matrix3d R_a_0_x = Sophus::SO3d::hat(prev_a);
+    Eigen::Matrix3d R_a_1_x = Sophus::SO3d::hat(curr_a);
     Eigen::Matrix3d R_w_x =  Sophus::SO3d::hat(w_mid);
+    Eigen::Matrix3d R_w_t =  Sophus::SO3d::hat(w_mid)*T;
+    dR_inv = d_theta_ij.inverse().matrix();
+
     //Sophus::SO3d Rab_k = prev_theta_ij*Sophus::SO3d::hat(prev_alpha_i - state.b_g_i_);
     //Sophus::SO3d Rab_kp = state.theta_ij_*Sophus::SO3d::hat(state.alpha_ij_ -state.b_g_i_);
     //
     // TODO: 2. set up F:
     //
     // F12 & F32:
-    auto F12 = - T*T/4*(prev_R*R_a_0_x+curr_R*R_a_1_x*(Eigen::Matrix3d::Identity()-R_w_x));
-    F_.block<3, 3>(0,3)=F12;
-    auto F32 = - T/2*(prev_R*R_a_0_x+curr_R*R_a_1_x*(Eigen::Matrix3d::Identity()-R_w_x));
-    F_.block<3, 3>(6,3)= F32;
+    F_.block<3, 3>(0,3)=- T/4.f*(prev_R*R_a_0_x+curr_R*R_a_1_x*dR_inv);
+ 
+    F_.block<3, 3>(6,3)= - 1.f/2.f*(prev_R*R_a_0_x+curr_R*R_a_1_x* dR_inv);
     // F14 & F34:
-    auto F14 = -1.f/4.f *(prev_R + curr_R)*T*T;
-    F_.block<3,3>(0,9) = F14;
-    auto F34 = -1.f/2.f *(prev_R + curr_R)*T;
-    F_.block<3, 3>(6,9) = F34;
+    F_.block<3,3>(0,9) =-1.f/4.f *T*(prev_R + curr_R);
+    F_.block<3, 3>(6,9) = -1.f/2.f *(prev_R + curr_R);
     // F15 & F35:
-    auto F15 = T*T*T/4 * curr_R*R_a_1_x;
-    F_.block<3, 3>(0,12) = F15;
-    auto F35 = T*T/2*curr_R*R_a_1_x;
-    F_.block<3,3>(6,12) = F35;
+    F_.block<3, 3>(0,12) = T*T/4.f * curr_R*R_a_1_x;
+    F_.block<3,3>(6,12) = T/2.f*curr_R*R_a_1_x;
     // F22:
-    auto F22 =  Eigen::Matrix3d::Identity() - R_w_x*T;
-    F_.block<3,3>(3,3) = F22;
+    F_.block<3,3>(3,3) = - R_w_x;
+    MatrixF F = T*F_ + MatrixF::Identity();
+
+    //F_.block<3, 3>(INDEX_ALPHA,  INDEX_BETA) =  Eigen::Matrix3d::Identity()*T;
+    //F_.block<3, 3>(INDEX_THETA,   INDEX_B_G) = -Eigen::Matrix3d::Identity()*T;
     //
     // TODO: 3. set up G:
     //
     // G11 & G31:
-    auto G11 = 0.25*prev_R*R_a_1_x*T*T;
+    auto G11 = 0.25*T*prev_R;
     B_.block<3,3>(0,0) = G11;
-    auto G31 = 0.5*prev_R*T;
+    auto G31 = 0.5*prev_R;
     B_.block<3,3>(6,0) = G31;
     // G12 & G32:
-    auto G12 = -T*T*T/8.f*curr_R*R_a_1_x;
+    auto G12 = -T*T/8.f*curr_R*R_a_1_x;
     B_.block<3,3>(0,3) = G12;
-    auto G32 = -T*T/4.f*curr_R*R_a_1_x;
+    auto G32 = -T/4.f*curr_R*R_a_1_x;
     B_.block<3,3>(6,0) = G32;
     // G13 & G33:
-    auto G13 = 0.25*curr_R*T*T;
+    auto G13 = 0.25*T*curr_R;
     B_.block<3,3>(0,6) = G13;
-    auto G33 = -1/2.f *curr_R*T;
+    auto G33 = 1.f/2.f *curr_R;
     B_.block<3,3>(6,3) = G33;
     // G14 & G34:
-    auto G14 = -T*T*T/8*curr_R*R_a_1_x;
+    auto G14 = -T*T/8.f*curr_R*R_a_1_x;
     B_.block<3, 3>(0,9)= G14;
-    auto G34 = -T*T/4* curr_R*R_a_1_x;
+    auto G34 = -T/4.f* curr_R*R_a_1_x;
     B_.block<3, 3>(6,9) = G34;
 
+    MatrixB B = T*B_ ;
+
     // TODO: 4. update P_:
-    P_= F_*P_*F_.transpose() + B_*Q_*B_.transpose();
+    P_= F*P_*F.transpose() + B*Q_*B.transpose();
     // 
     // TODO: 5. update Jacobian:
-    J_ = F_*J_;
+    J_ = F*J_;
     //
 }
 
