@@ -1,3 +1,7 @@
+The report is divided into pratical part and theotrical part.
+
+# Pratical Part
+
 ## Task 1:
 
 The codeblocks are filled in. The green line shows the optimized tragectory.
@@ -53,7 +57,7 @@ std      0.080536
 
 ## Task 2
 
-After disabling the usage of IMU, the result has also been obviously improved after optimization. From the observation of the map, the improvement could not been easily observed...
+After disabling the usage of IMU, the result has also been obviously improved after optimization.  But the perfromance is worse than the one with IMU as expected.
 
 optimized benchmark
 
@@ -77,3 +81,26 @@ std	5.409490
 
 <img src="doc/images/map2.png" alt="Terminator" width="100%"> 
 <img src="doc/images/odom2.png" alt="Terminator" width="100%">
+
+The comparization of the optimized map with IMU and without IMU is done below.
+
+The green one represents the one with IMU. The green one seems to be obviously more concrete and clear.
+
+<img src="doc/images/map_compare.png" alt="Terminator" width="100%">
+
+After taking a close look, the performance with IMU in the z direstion is also better in general. But in some part(like at the right side), the perforamance with IMU seems to have more noise in the z direction.
+
+<img src="doc/images/map_flaw.png" alt="Terminator" width="100%">
+
+
+<img src="doc/images/map_flaw2.png" alt="Terminator" width="100%">
+
+# Theoretical Part
+
+ 
+
+<img src="doc/images/t1.jpg" alt="Terminator" width="100%">
+<img src="doc/images/t2.jpg" alt="Terminator" width="100%">
+<img src="doc/images/t3.jpg" alt="Terminator" width="100%">
+<img src="doc/images/t4.jpg" alt="Terminator" width="100%">
+<img src="doc/images/t5.jpg" alt="Terminator" width="100%">
