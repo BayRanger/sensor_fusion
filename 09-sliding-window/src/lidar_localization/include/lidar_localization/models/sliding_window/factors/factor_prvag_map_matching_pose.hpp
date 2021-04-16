@@ -51,16 +51,18 @@ public:
 
     //
     // TODO: get square root of information matrix:
-    //
-    Eigen::Map<const Eigen::Matrix<double,6,1>> residual(residuals);
+        Eigen::Matrix<double,6,6> sqrt_info = Eigen::LLT<Eigen::Matrix<double,6,6>>(I_).matrixL().transpose();
 
-    residual.block(INDEX_P,0,3,1) = pos - pos_prior;
-    residual.block(INDEX_R,0,3,1) = (ori * ori_prior.inverse()).log();
+    //
 
     //
     // TODO: compute residual:
     //
 
+    Eigen::Map<Eigen::Matrix<double,6,1>> residual(residuals);
+
+    residual.block(INDEX_P,0,3,1) = pos - pos_prior;
+    residual.block(INDEX_R,0,3,1) = (ori * ori_prior.inverse()).log();
     //
     // TODO: compute jacobians:
     //
@@ -79,6 +81,7 @@ public:
     //
     // TODO: correct residual by square root of information matrix:
     //
+    residual = sqrt_info * residual;
 		
     return true;
   }

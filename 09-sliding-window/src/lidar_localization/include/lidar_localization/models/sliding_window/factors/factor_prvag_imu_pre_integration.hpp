@@ -78,6 +78,7 @@ public:
     //
     // TODO: get square root of information matrix:
     //
+    Eigen::Matrix<double,15,15> sqrt_info = Eigen::LLT<Eigen::Matrix<double,15,15>>(I_).matrixL().transpose();
 
     //
     // TODO: compute residual:
@@ -96,9 +97,11 @@ public:
     if ( jacobians ) {
       // compute shared intermediate results:
       const Eigen::Matrix3d R_i_inv = ori_i.inverse().matrix();
-      const Eigen::Matrix3d J_r_inv = JacobianRinv(residual.block(INDEX_R,0,3,1));
+      const Eigen::Matrix3d J_r_inv = JacobianRInv(residual.block(INDEX_R,0,3,1));
 
       if ( jacobians[0] ) {
+        Eigen::Map<Eigen::Matrix<double,15,15,Eigen::RowMajor>> jacobian_i(jacobians[0]);
+        jacobian_i.setZero();
         // a. residual, position:
         jacobian_i.block<3,3>(INDEX_P,INDEX_P) = -R_i_inv;
         jacobian_i.block<3,3>(INDEX_P,INDEX_R) =  Sophus::SO3d::hat(ori_i.inverse()*(pos_j - pos_i - (vel_i -0.50*g_ *T_)*T_));
@@ -110,10 +113,10 @@ public:
         // b. residual, orientation:
         jacobian_i.block<3,3>(INDEX_R,INDEX_R) = -J_r_inv*(ori_j.inverse() * ori_i).matrix();
         jacobian_i.block<3,3>(INDEX_R,INDEX_G) = -J_r_inv *(Sophus::SO3d::exp(residual.block<3,1>(INDEX_R,0)))
-        .matrix().inverse()*J_.block<3,3>(INDDEX_R,INDEX_G);
+        .matrix().inverse()*J_.block<3,3>(INDEX_R,INDEX_G);
 
         // c. residual, velocity:
-        jacobian_i.block<3,3>(INDEX_V,INDEX_R) = Sophus::SO3d::hat(ori_i.inverse()* (vel_j -vel_i *g_ * T_));
+        jacobian_i.block<3,3>(INDEX_V,INDEX_R) = Sophus::SO3d::hat(ori_i.inverse()* (vel_j -vel_i +g_ * T_));
         jacobian_i.block<3,3>(INDEX_V,INDEX_V) = -R_i_inv; 
         jacobian_i.block<3,3>(INDEX_V,INDEX_A) = -J_.block<3,3>(INDEX_V, INDEX_A);
         jacobian_i.block<3,3>(INDEX_V,INDEX_G) = -J_.block<3,3>(INDEX_V, INDEX_G);
