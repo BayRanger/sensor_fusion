@@ -52,6 +52,10 @@ public:
     //
     // TODO: get square root of information matrix:
     //
+    Eigen::Map<const Eigen::Matrix<double,6,1>> residual(residuals);
+
+    residual.block(INDEX_P,0,3,1) = pos - pos_prior;
+    residual.block(INDEX_R,0,3,1) = (ori * ori_prior.inverse()).log();
 
     //
     // TODO: compute residual:
@@ -63,6 +67,12 @@ public:
     if ( jacobians ) {
       if ( jacobians[0] ) {
         // implement jacobian computing:
+        Eigen::Map<Eigen::Matrix<double,6,15,Eigen::RowMajor>> jacobian_prior(jacobians[0]);
+        jacobian_prior.setZero();
+        jacobian_prior.block<3,3>(INDEX_P,INDEX_P) = Eigen::Matrix3d::Identity();
+        jacobian_prior.block<3,3>(INDEX_R,INDEX_R) = JacobianRInv(residual.block(INDEX_R,0,3,1))*ori_prior.matrix();
+
+        jacobian_prior =sqrt_info * jacobian_prior;
       }
     }
 
