@@ -150,7 +150,7 @@ bool MatchingFlow::UpdateMatching() {
                       << std::endl;
         }
     }
-
+ 
     return matching_ptr_->Update(
         current_cloud_data_, 
         laser_odometry_, map_matching_odometry_

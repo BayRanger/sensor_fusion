@@ -98,27 +98,30 @@ public:
     const std::vector<double *> &parameter_blocks
   ) {
     // init:
+ 
     ResidualBlockInfo res_imu_pre_integration(residual, parameter_blocks);
     Eigen::VectorXd residuals;
     std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> jacobians;
-
+ 
     // compute:
     Evaluate(res_imu_pre_integration, residuals, jacobians);
     const Eigen::MatrixXd &J_m = jacobians.at(0);
     const Eigen::MatrixXd &J_r = jacobians.at(1);
-
+ 
     //
     // TODO: Update H:
     //
     // a. H_mm:
     H_.block<15,15>(INDEX_M, INDEX_M) += J_m.transpose() * J_m;
-    // b. H_mr:
-    b_.block<15,15>(INDEX_M, INDEX_R) += J_m.transpose() * J_r;
+    // b. H_mr: 
+    H_.block<15,15>(INDEX_M, INDEX_R) += J_m.transpose() * J_r;
     // c. H_rm:
-    H_.block<15,15>(INDEX_M, INDEX_M) += J_r.transpose() *J_m;
-    // d. H_rr:
-    H_.block<15,15>(INDEX_R, INDEX_R) += J_r.transpose() *J_r;
 
+    H_.block<15,15>(INDEX_R, INDEX_M) += J_r.transpose() *J_m;
+    // d. H_rr:
+ 
+    H_.block<15,15>(INDEX_R, INDEX_R) += J_r.transpose() *J_r;
+ 
 
     //
     // Update b:
@@ -157,7 +160,7 @@ public:
     Eigen::VectorXd S_inv_sqrt = S_inv.cwiseSqrt();
 
     J_ = S_sqrt.asDiagonal() * saes.eigenvectors().transpose();
-    e_ = S_inv_sqrt.asDiagonal() * saes.eigenvalues().transpose() * b_marginalized;  
+    e_ = S_inv_sqrt.asDiagonal() * saes.eigenvectors().transpose() * b_marginalized;  
 
   }
 

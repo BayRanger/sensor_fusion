@@ -154,6 +154,8 @@ public:
     //
     // TODO: correct residual by square root of information matrix:
     //
+        residual = sqrt_info * residual;
+
 		
     return true;
   }

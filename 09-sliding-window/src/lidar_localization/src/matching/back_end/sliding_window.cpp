@@ -132,8 +132,9 @@ bool SlidingWindow::Update(
             gnss_pose
         ) 
     ) {
-        Update();
-        MaybeOptimized();
+         Update();
+         MaybeOptimized();
+ 
     }
 
     return true;
@@ -313,8 +314,12 @@ bool SlidingWindow::Update(void) {
     // fix the pose of the first key frame for lidar only mapping:
     if ( sliding_window_ptr_->GetNumParamBlocks() == 0 ) {
         // TODO: add init key frame
+                sliding_window_ptr_->AddPRVAGParam(current_key_frame_, true);
+
     } else {
         // TODO: add current key frame
+                sliding_window_ptr_->AddPRVAGParam(current_key_frame_, false);
+
     }
 
     // get num. of vertices:
@@ -333,6 +338,9 @@ bool SlidingWindow::Update(void) {
         Eigen::Matrix4d prior_pose = current_map_matching_pose_.pose.cast<double>();
 
         // TODO: add constraint, GNSS position:
+        sliding_window_ptr_->AddPRVAGMapMatchingPoseFactor(
+            param_index_j, 
+            prior_pose, measurement_config_.noise.map_matching);
     }
 
     //
@@ -348,12 +356,19 @@ bool SlidingWindow::Update(void) {
         // get relative pose measurement:
         Eigen::Matrix4d relative_pose = (last_key_frame_.pose.inverse() * current_key_frame_.pose).cast<double>();
         // TODO: add constraint, lidar frontend / loop closure detection:
-        
+             sliding_window_ptr_->AddPRVAGRelativePoseFactor(
+            param_index_i, param_index_j, 
+            relative_pose, measurement_config_.noise.lidar_odometry
+        );
         //
         // b. IMU pre-integration:
         //
         if ( measurement_config_.source.imu_pre_integration ) {
             // TODO: add constraint, IMU pre-integraion:
+              sliding_window_ptr_->AddPRVAGIMUPreIntegrationFactor(
+                param_index_i, param_index_j,
+                imu_pre_integration_
+            );
         }
     }
 

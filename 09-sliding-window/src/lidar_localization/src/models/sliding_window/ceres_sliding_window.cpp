@@ -237,7 +237,6 @@ sliding_window::FactorPRVAGIMUPreIntegration *CeresSlidingWindow::GetResIMUPreIn
 
 bool CeresSlidingWindow::Optimize() {
     static int optimization_count = 0;
-    
     // get key frames count:
     const int N = GetNumParamBlocks();
 
@@ -275,9 +274,11 @@ bool CeresSlidingWindow::Optimize() {
             const ceres::CostFunction *factor_map_matching_pose = GetResMapMatchingPose(
                 residual_blocks_.map_matching_pose.front()
             );
+
             const ceres::CostFunction *factor_relative_pose = GetResRelativePose(
                 residual_blocks_.relative_pose.front()
             );
+
             const ceres::CostFunction *factor_imu_pre_integration = GetResIMUPreIntegration(
                 residual_blocks_.imu_pre_integration.front()
             );
@@ -354,6 +355,7 @@ bool CeresSlidingWindow::Optimize() {
 
             }
         }
+ 
 
         // solve:
         ceres::Solver::Summary summary;

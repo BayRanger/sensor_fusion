@@ -58,6 +58,7 @@ bool SlidingWindowFlow::Run() {
         if ( !ValidData() )
             continue;
 
+ 
         UpdateBackEnd();
         PublishData();
     }
@@ -158,9 +159,11 @@ bool SlidingWindowFlow::UpdateBackEnd() {
 
         odometry_inited = true;
     }
+ 
     
     // update IMU pre-integration:
     UpdateIMUPreIntegration();
+ 
     
     // current lidar odometry in map frame:
     current_laser_odom_data_.pose = odom_init_pose * current_laser_odom_data_.pose;
