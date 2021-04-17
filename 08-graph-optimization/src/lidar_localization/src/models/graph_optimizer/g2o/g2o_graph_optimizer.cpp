@@ -63,7 +63,7 @@ bool G2oGraphOptimizer::Optimize() {
     graph_ptr_->initializeOptimization();
     graph_ptr_->computeInitialGuess();
     graph_ptr_->computeActiveErrors();
-    graph_ptr_->setVerbose(true);
+    graph_ptr_->setVerbose(false);
 
     double chi2 = graph_ptr_->chi2();
 
