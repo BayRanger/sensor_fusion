@@ -1,3 +1,111 @@
+Theory
+
+要解决本章内容
+
+1.求得IMU preintegration，Map Matching，relative pose from lidar 的因子和优化变量的残差
+
+
+<img src="doc/images/imu_factor.png" alt="Terminator" width="100%">
+
+
+<img src="doc/images/lidar_factor.png" alt="Terminator" width="100%">
+
+
+In the directory  **src/lidar_localization/include/lidar_localization**
+
+推导细节见doc文档，修改代码对应文件目录
+│   └── sliding_window
+│       ├── factors
+│       │   ├── factor_prvag_imu_pre_integration.hpp
+│       │   ├── factor_prvag_map_matching_pose.hpp
+│       │   ├── factor_prvag_marginalization.hpp
+│       │   └── factor_prvag_relative_pose.hpp
+
+2. Sliding Window Marginalization
+
+分两步移除old frame，修改的文件为factor_prvag_marginalization.hpp
+
+3. 在sliding_window.cpp中我们添加约束
+4. 在ceres_sliding_window.cpp中我们添加响应因子和parameter block
+
+Code Structure
+
+In directory  **src/lidar_localization/src/models**
+
+├── cloud_filter
+├── graph_optimizer
+│   ├── g2o
+├── kalman_filter
+├── mag_table
+│   └── geo_mag_declination.cpp
+├── pre_integrator
+│   ├── imu_pre_integrator.cpp
+│   └── odo_pre_integrator.cpp
+├── registration
+│   └── ndt_registration.cpp
+├── scan_adjust
+│   └── distortion_adjust.cpp
+├── scan_context_manager
+│   ├── key_frames.pb.cpp
+│   ├── ring_keys.pb.cpp
+│   ├── scan_context_manager.cpp
+│   └── scan_contexts.pb.cpp
+└── sliding_window
+└── ceres_sliding_window.cpp
+
+In the directory  **src/lidar_localization/include/lidar_localization**
+
+├── data_pretreat
+├── global_defination
+├── matching
+│   ├── back_end
+│   │   ├── sliding_window_flow.hpp
+│   │   └── sliding_window.hpp
+│   └── front_end
+│       ├── matching_flow.hpp
+│       └── matching.hpp
+├── models
+│   ├── cloud_filter
+│   │   ├── box_filter.hpp
+│   ├── graph_optimizer
+│   │   ├── g2o
+│   │   │   ├── edge
+│   │   │   │   ├── edge_prvag_imu_pre_integration.hpp
+│   │   │   │   ├── edge_prvag_odo_pre_integration.hpp
+│   │   │   │   ├── edge_prvag_prior_pos.hpp
+│   │   │   │   ├── edge_prvag_relative_pose.hpp
+│   │   │   │   ├── edge_se3_priorquat.hpp
+│   │   │   │   └── edge_se3_priorxyz.hpp
+│   │   │   ├── g2o_graph_optimizer.hpp
+│   │   │   └── vertex
+│   │   │       └── vertex_prvag.hpp
+│   │   └── interface_graph_optimizer.hpp
+│   ├── kalman_filter
+│   ├── mag_table
+│   │   └── geo_mag_declination.hpp
+│   ├── pre_integrator
+│   │   ├── imu_pre_integrator.hpp
+│   │   ├── odo_pre_integrator.hpp
+│   │   └── pre_integrator.hpp
+│   ├── registration
+│   ├── scan_adjust
+│   ├── scan_context_manager
+│   └── sliding_window
+│       ├── ceres_sliding_window.hpp
+│       ├── factors
+│       │   ├── factor_prvag_imu_pre_integration.hpp
+│       │   ├── factor_prvag_map_matching_pose.hpp
+│       │   ├── factor_prvag_marginalization.hpp
+│       │   └── factor_prvag_relative_pose.hpp
+│       ├── params
+│       │   └── param_prvag.hpp
+│       └── utils
+├── publisher
+├── sensor_data
+├── subscriber
+├── tf_listener
+└── tools
+
 ## Experiment
 
 
