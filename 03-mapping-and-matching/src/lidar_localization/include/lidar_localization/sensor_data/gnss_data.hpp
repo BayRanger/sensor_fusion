@@ -34,7 +34,7 @@ class GNSSData {
   public: 
     void InitOriginPosition();
     void UpdateXYZ();
-    static bool SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time);
+    static bool SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time, double time_diff);
 };
 }
 #endif

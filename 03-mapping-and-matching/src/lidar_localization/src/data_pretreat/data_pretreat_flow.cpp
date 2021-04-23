@@ -71,7 +71,7 @@ bool DataPretreatFlow::ReadData() {
     // then use linear interpolation to generate synced measurement:
     bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
     bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
-    bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time);
+    bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time,0.2);
 
     // only mark lidar as 'inited' when all the three sensors are synced:
     static bool sensor_inited = false;

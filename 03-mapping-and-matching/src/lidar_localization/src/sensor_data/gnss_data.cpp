@@ -35,7 +35,7 @@ void GNSSData::UpdateXYZ() {
     geo_converter.Forward(latitude, longitude, altitude, local_E, local_N, local_U);
 }
 
-bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time) {
+bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time,double time_diff) {
     // 传感器数据按时间序列排列，在传感器数据中为同步的时间点找到合适的时间位置
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
@@ -46,11 +46,11 @@ bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>
             UnsyncedData.pop_front();
             continue;
         }
-        if (sync_time - UnsyncedData.front().time > 0.2) {
+        if (sync_time - UnsyncedData.front().time > time_diff) {
             UnsyncedData.pop_front();
             return false;
         }
-        if (UnsyncedData.at(1).time - sync_time > 0.2) {
+        if (UnsyncedData.at(1).time - sync_time > time_diff) {
             UnsyncedData.pop_front();
             return false;
         }
