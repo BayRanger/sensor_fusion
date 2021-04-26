@@ -8,22 +8,46 @@
 #include "glog/logging.h"
 
 namespace lidar_localization {
-bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<VelocityData>& SyncedData, double sync_time) {
+bool VelocityData::SyncDataFromGnssIMU(std::deque<GNSSData>& GNSSsyncedData,std::deque<IMUData>& IMUSyncedData, std::deque<VelocityData>& SyncedData,double sync_time) {
+        VelocityData synced_data;
+        int d_size = GNSSsyncedData.size();
+        if (d_size<2)
+        {
+            return false;
+        }
+        GNSSData gnss_data_back = GNSSsyncedData.back();
+        GNSSData gnss_data_sec = GNSSsyncedData[d_size-2];
+        IMUData imu_data_back = IMUSyncedData.back();
+        synced_data.time = sync_time;
+        double time_diff=  gnss_data_back.time - gnss_data_sec.time;
+        synced_data.linear_velocity.x = (gnss_data_back.local_E - gnss_data_sec.local_E)/time_diff;
+        synced_data.linear_velocity.y = (gnss_data_back.local_N - gnss_data_sec.local_N)/time_diff;
+        synced_data.linear_velocity.z = (gnss_data_back.local_U - gnss_data_sec.local_U)/time_diff;
+        synced_data.angular_velocity.x = imu_data_back.angular_velocity.x ;
+        synced_data.angular_velocity.y = imu_data_back.angular_velocity.y ;
+        synced_data.angular_velocity.z = imu_data_back.angular_velocity.z ;
+
+        SyncedData.push_back(synced_data);
+        return true;
+
+}
+
+bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<VelocityData>& SyncedData, double sync_time,double threshold) {
     // 传感器数据按时间序列排列，在传感器数据中为同步的时间点找到合适的时间位置
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
     while (UnsyncedData.size() >= 2) {
-        if (UnsyncedData.front().time > sync_time)
-            return false;
-        if (UnsyncedData.at(1).time < sync_time) {
+        //if (UnsyncedData.front().time > sync_time)
+        //    return false;
+        //if (UnsyncedData.at(1).time < sync_time) {
+        //    UnsyncedData.pop_front();
+        //    continue;
+        //}
+        if (sync_time - UnsyncedData.front().time > threshold) {
             UnsyncedData.pop_front();
-            continue;
-        }
-        if (sync_time - UnsyncedData.front().time > 0.2) {
-            UnsyncedData.pop_front();
             return false;
         }
-        if (UnsyncedData.at(1).time - sync_time > 0.2) {
+        if (UnsyncedData.at(1).time - sync_time > threshold) {
             UnsyncedData.pop_front();
             return false;
         }

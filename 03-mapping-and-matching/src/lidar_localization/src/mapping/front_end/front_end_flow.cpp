@@ -16,14 +16,21 @@ FrontEndFlow::FrontEndFlow(ros::NodeHandle& nh, std::string cloud_topic, std::st
 }
 
 bool FrontEndFlow::Run() {
+    //LOG(INFO) << "Front End read data" << std::endl;
+
     if (!ReadData())
         return false;
 
     while(HasData()) {
+        //LOG(INFO) << "Front End has data" << std::endl;
+
         if (!ValidData())
             continue;
+            //LOG(INFO) << "Front End Valid data" << std::endl;
 
         if (UpdateLaserOdometry()) {
+            //LOG(INFO) << "Front End Publish data" << std::endl;
+
             PublishData();
         }
     }

@@ -33,6 +33,8 @@ void CloudSubscriber::ParseData(std::deque<CloudData>& cloud_data_buff) {
     // pipe all available measurements to output buffer:
     if (new_cloud_data_.size() > 0) {
         cloud_data_buff.insert(cloud_data_buff.end(), new_cloud_data_.begin(), new_cloud_data_.end());
+        //LOG(INFO) << "Parse cloud insert...." << std::endl;
+
         new_cloud_data_.clear();
     }
     

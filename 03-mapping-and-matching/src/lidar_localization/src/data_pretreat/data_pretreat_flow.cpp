@@ -10,11 +10,17 @@
 
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh, std::string cloud_topic) {
-    std::string pointcloud_topic = "/kitti/velo/pointcloud";
-    std::string imu_topic = "/kitti/oxts/imu";
-    std::string gnss_topic ="/kitti/oxts/gps/fix";
-    std::string imu_tf ="/imu_link";
-    std::string lidar_tf ="/velo_link";
+    //std::string pointcloud_topic = "/kitti/velo/pointcloud";
+    std::string pointcloud_topic = "/velodyne_points";//"/kitti/velo/pointcloud";
+    //std::string imu_topic = "/kitti/oxts/imu";
+    std::string imu_topic = "/imu/data";
+    //std::string gnss_topic ="/kitti/oxts/gps/fix";
+    std::string gnss_topic ="/navsat/fix";
+    //std::string imu_tf ="/imu_link";
+    std::string lidar_tf ="/velodyne";
+    std::string odom_topic = "/navsat/odom";
+    std::string vel_topic = "/kitti/oxts/gps/vel";
+
 
     // subscriber
     // a. velodyne measurement:
@@ -23,10 +29,10 @@ DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh, std::string cloud_topic)
     imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, imu_topic, 1000000);
     // c. OXTS velocity:
     //TODO:
-    velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, "/kitti/oxts/gps/vel", 1000000);
+    velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, odom_topic, 1000000);
     // d. OXTS GNSS:
     gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, gnss_topic, 1000000);
-    lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, imu_tf, lidar_tf);
+    //lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, imu_tf, lidar_tf);
 
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, cloud_topic, lidar_tf, 100);
@@ -53,7 +59,7 @@ bool DataPretreatFlow::Run() {
         TransformData();
         PublishData();
     }
-    LOG(INFO) << "RUN works" << std::endl;
+    //LOG(INFO) << "RUN works" << std::endl;
 
 
     return true;
@@ -65,33 +71,63 @@ bool DataPretreatFlow::ReadData() {
     static std::deque<GNSSData> unsynced_gnss_;
 
     // fetch lidar measurements from buffer:
+   // LOG(INFO) << "Start to read data...." << std::endl;
+
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
+ 
     imu_sub_ptr_->ParseData(unsynced_imu_);
+    //        LOG(INFO) << "Parse gnss...." << std::endl;
+
     velocity_sub_ptr_->ParseData(unsynced_velocity_);
     gnss_sub_ptr_->ParseData(unsynced_gnss_);
 
     if (cloud_data_buff_.size() == 0)
+    {
+       //LOG(INFO) << "No cloud data...." << std::endl;
+
         return false;
+
+    }
 
     // use timestamp of lidar measurement as reference:
     double cloud_time = cloud_data_buff_.front().time;
     // sync IMU, velocity and GNSS with lidar measurement:
     // find the two closest measurement around lidar measurement time
     // then use linear interpolation to generate synced measurement:
-    bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
-    bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
-    bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time,0.2);
+    //The data in the cloud_data_buff_ has already been synchronized 
+    //LOG(INFO) << "Start to read data works" << std::endl;
 
+    bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time, 0.02);
+    bool valid_velocity =  VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_ , cloud_time, 2);
+    bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time,2);
+    //bool valid_velocity = false;
+    //if (valid_gnss &&valid_imu)
+    //{            //LOG(INFO) << "GNSS is valid....." << std::endl;
+
+    //    valid_velocity =  VelocityData::SyncDataFromGnssIMU(gnss_data_buff_,imu_data_buff_, velocity_data_buff_,cloud_time);
+    //}
     // only mark lidar as 'inited' when all the three sensors are synced:
     static bool sensor_inited = false;
     if (!sensor_inited) {
         if (!valid_imu || !valid_velocity || !valid_gnss) {
+            if (!valid_imu)
+            {
+            LOG(INFO) << "imu is invalid....." << std::endl;
+             }
+            if (!valid_velocity)
+            {
+            LOG(INFO) << "velocity is invalid....." << std::endl;
+             }            
+            if (!valid_gnss)
+            {
+            LOG(INFO) << "gnss is invalid....." << std::endl;
+             }   
             cloud_data_buff_.pop_front();
             return false;
         }
         sensor_inited = true;
     }
-            LOG(INFO) << "Read data works" << std::endl;
+            //LOG(INFO) << "Read data works" << std::endl;
 
 
     return true;
@@ -101,10 +137,17 @@ bool DataPretreatFlow::InitCalibration() {
     // lookup imu pose in lidar frame:
     static bool calibration_received = false;
     if (!calibration_received) {
-        if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_)) {
+        //if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_)) {
             calibration_received = true;
+            Eigen::Matrix4f imu_to_lidar;
+            imu_to_lidar<<  2.67949e-08, -1,  0, 0,
+           1,  2.67949e-08,  0, 0,
+           0,  0,  1, -0.28, 
+           0., 0., 0., 1;
+            lidar_to_imu_ = imu_to_lidar.inverse();
+
             LOG(INFO)<<"InitCalibration works"<< std::endl;
-        }
+        //}
     }
 
     return calibration_received;
@@ -130,7 +173,7 @@ bool DataPretreatFlow::HasData() {
         return false;
     if (gnss_data_buff_.size() == 0)
         return false;
-    LOG(INFO) << "Has Data works" << std::endl;
+    //LOG(INFO) << "Has Data works" << std::endl;
 
     return true;
 }
@@ -168,7 +211,7 @@ bool DataPretreatFlow::ValidData() {
     imu_data_buff_.pop_front();
     velocity_data_buff_.pop_front();
     gnss_data_buff_.pop_front();
-    LOG(INFO) << "ValidData works" << std::endl;
+    //LOG(INFO) << "ValidData works" << std::endl;
     return true;
 }
 
@@ -190,7 +233,7 @@ bool DataPretreatFlow::TransformData() {
     // motion compensation for lidar measurements:
     distortion_adjust_ptr_->SetMotionInfo(0.1, current_velocity_data_);
     distortion_adjust_ptr_->AdjustCloud(current_cloud_data_.cloud_ptr, current_cloud_data_.cloud_ptr);
-    LOG(INFO) << "Transform data works" << std::endl;
+    //LOG(INFO) << "Transform data works" << std::endl;
 
     return true;
 }
@@ -198,7 +241,7 @@ bool DataPretreatFlow::TransformData() {
 bool DataPretreatFlow::PublishData() {
     cloud_pub_ptr_->Publish(current_cloud_data_.cloud_ptr, current_cloud_data_.time);
     gnss_pub_ptr_->Publish(gnss_pose_, current_gnss_data_.time);
-    LOG(INFO) << "Publish data works" << std::endl;
+    //LOG(INFO) << "Publish data works" << std::endl;
 
     return true;
 }

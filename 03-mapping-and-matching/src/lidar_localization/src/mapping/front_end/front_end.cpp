@@ -88,13 +88,21 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
     // 
     // set up current scan:
     // 
+    //LOG(INFO) << "Front End Update 1" << std::endl;
+
     current_frame_.cloud_data.time = cloud_data.time;
     // a. remove invalid measurements:
     std::vector<int> indices;
+    //LOG(INFO) << "Front End Update 2" << std::endl;
     pcl::removeNaNFromPointCloud(*cloud_data.cloud_ptr, *current_frame_.cloud_data.cloud_ptr, indices);
     // b. apply filter to current scan:
+    //LOG(INFO) << "Front End Update 3" << std::endl;
+
     CloudData::CLOUD_PTR filtered_cloud_ptr(new CloudData::CLOUD());
+    //    LOG(INFO) << "Front End Update 4" << std::endl;
+
     frame_filter_ptr_->Filter(current_frame_.cloud_data.cloud_ptr, filtered_cloud_ptr);
+    //LOG(INFO) << "Front End Update 5" << std::endl;
 
     //
     // set up local map:
@@ -105,6 +113,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
         cloud_pose = current_frame_.pose;
         return true;
     }
+    //LOG(INFO) << "Front End Update 6" << std::endl;
 
     // 
     // update lidar odometry using scan match result:
@@ -112,6 +121,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
     CloudData::CLOUD_PTR result_cloud_ptr(new CloudData::CLOUD());
     registration_ptr_->ScanMatch(filtered_cloud_ptr, predict_pose, result_cloud_ptr, current_frame_.pose);
     cloud_pose = current_frame_.pose;
+    //LOG(INFO) << "Front End Update 7" << std::endl;
 
     //
     // update init pose for next scan match:
@@ -129,6 +139,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
         UpdateWithNewFrame(current_frame_);
         last_key_frame_pose = current_frame_.pose;
     }
+   // LOG(INFO) << "Front End Update 8" << std::endl;
 
     return true;
 }

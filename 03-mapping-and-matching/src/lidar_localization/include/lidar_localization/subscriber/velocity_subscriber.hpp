@@ -12,6 +12,7 @@
 
 #include <ros/ros.h>
 #include "geometry_msgs/TwistStamped.h"
+ #include "nav_msgs/Odometry.h"
 
 #include "lidar_localization/sensor_data/velocity_data.hpp"
 
@@ -24,6 +25,7 @@ class VelocitySubscriber {
 
   private:
     void msg_callback(const geometry_msgs::TwistStampedConstPtr& twist_msg_ptr);
+    void msg_callback_odom(const nav_msgs::Odometry::ConstPtr& twist_msg_ptr);
 
   private:
     ros::NodeHandle nh_;

@@ -18,7 +18,10 @@ GeographicLib::LocalCartesian lidar_localization::GNSSData::geo_converter;
 namespace lidar_localization {
 void GNSSData::InitOriginPosition() {
     //std::cout<<"latitude "<<latitude<<" , "<<"longitude "<<longitude<<" , altitude "<<altitude<<std::endl;
-    geo_converter.Reset(48.9827 , 8.39046 ,116.396);
+    //geo_converter.Reset(48.9827 , 8.39046 ,116.396);
+    //HK
+    //geo_converter.Reset(22.30115 , 114.17 , 6.4282);
+    geo_converter.Reset(latitude, longitude, altitude);
     //std::cout<<"After reset latitude "<<latitude<<" , "<<"longitude "<<longitude<<" , altitude "<<altitude<<std::endl;
 
     origin_longitude = longitude;
@@ -40,12 +43,13 @@ bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
     while (UnsyncedData.size() >= 2) {
-        if (UnsyncedData.front().time > sync_time)
-            return false;
-        if (UnsyncedData.at(1).time < sync_time) {
-            UnsyncedData.pop_front();
-            continue;
-        }
+        //if (UnsyncedData.front().time > sync_time)
+        //    return false;
+            //If the time of Gnss is smaller thatn lidar
+       // if (UnsyncedData.at(1).time < sync_time) {
+       //     UnsyncedData.pop_front();
+       //     continue;
+       // }
         if (sync_time - UnsyncedData.front().time > time_diff) {
             UnsyncedData.pop_front();
             return false;
