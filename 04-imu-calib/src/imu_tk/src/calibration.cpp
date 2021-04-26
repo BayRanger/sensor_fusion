@@ -83,7 +83,6 @@ public:
             d_by_theta.block<3,3>(0,3) = d_by_s;
             d_by_theta.block<3,3>(0,6) = d_by_b;
             Eigen::Matrix< double, 3 , 1> h_vec = calib_triad.getMisalignmentMatrix()*calib_triad.getScaleMatrix()*(raw_samp-calib_triad.getBiasVector());
-            //TODO: change it to rowvector
             Eigen::Matrix< double, 1 , 3> h_rowvec =  h_vec.transpose();
 						Eigen::Map<Eigen::Matrix<double, 1, 9, Eigen::RowMajor> > J_vec(jacobians[0]);
 						J_vec.setZero();

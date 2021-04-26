@@ -1,8 +1,8 @@
-data_path: /workspace/assignments/01-lidar-odometry/src/lidar_localization   # 数据存放路径
+data_path: /home/chahe/project/sensor-fusion-for-localization-and-mapping/workspace/assignments/01-lidar-odometry/src/lidar_localization   # 数据存放路径
 
 # 匹配
 # TODO: implement your custom registration method and add it here
-registration_method: HCX   # 选择点云匹配方法，目前支持：ICP, NDT
+registration_method: ICP_SVD   # 选择点云匹配方法，目前支持：ICP, NDT
 
 # 局部地图
 key_frame_distance: 2.0 # 关键帧距离
@@ -32,11 +32,7 @@ ICP_SVD:
     trans_eps : 0.01
     euc_fitness_eps : 0.36
     max_iter : 10
-HCX:
-    max_corr_dist : 1.2
-    trans_eps : 0.01
-    euc_fitness_eps : 0.36
-    max_iter : 30
+    
 ## 滤波相关参数
 voxel_filter:
     local_map:

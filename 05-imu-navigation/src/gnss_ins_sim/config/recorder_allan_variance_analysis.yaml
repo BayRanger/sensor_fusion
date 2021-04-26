@@ -5,10 +5,11 @@ imu: 1
 # sample frequency of simulated GNSS/IMU data:
 sample_frequency:
     imu: 100.0
-    gps: 10.0
+    gps: 100.0
 # topic name:
 topic_name: /sim/sensor/imu
+gps_topic_name: /sim/sensor/gps
 # output rosbag path:
-output_path: /workspace/data/gnss_ins_sim/allan_variance_analysis
+output_path: /home/chahe/project/sensor-fusion-for-localization-and-mapping/workspace/data/allan_variance_analysis
 # output name:
-output_name: data.bag
+output_name: stable_speed.bag

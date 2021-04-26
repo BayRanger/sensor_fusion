@@ -3,7 +3,7 @@ imu:
     gravity:
         x:  0.0
         y:  0.0
-        z: -9.81
+        z: -9.7942
     bias:
         angular_velocity:
             x: 0.0
@@ -15,7 +15,9 @@ imu:
             z: 0.0
             
 pose:
-    frame_id: inertial
+    frame_id: NED
     topic_name: 
-        ground_truth: /pose/ground_truth
-        estimation: /pose/estimation
+        #ground_truth: /pose/ground_truth  #TODO
+        ground_truth: /sim/sensor/gps
+        estimation: /pose/estimation  
+ 
