@@ -37,12 +37,12 @@ bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<V
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
     while (UnsyncedData.size() >= 2) {
-        //if (UnsyncedData.front().time > sync_time)
+        // if (UnsyncedData.front().time > sync_time)
         //    return false;
-        //if (UnsyncedData.at(1).time < sync_time) {
+        // if (UnsyncedData.at(1).time < sync_time) {
         //    UnsyncedData.pop_front();
         //    continue;
-        //}
+        // }
         if (sync_time - UnsyncedData.front().time > threshold) {
             UnsyncedData.pop_front();
             return false;
